@@ -17,6 +17,20 @@ A lightweight, cross-platform web application for sharing files and chatting ove
 - **🌐 Network Discovery**: Displays all available network addresses for easy access
 - **🚀 Zero Configuration**: Works out of the box with sensible defaults
 
+## 📸 Screenshots
+
+### Home Dashboard
+![Home Dashboard](screenshots/ss1.png)
+*QR codes for easy mobile device connection with network addresses*
+
+### Real-time Chat
+![Chat Interface](screenshots/ss2.png)
+*Live messaging with user presence and message history*
+
+### File Sharing
+![File Sharing Interface](screenshots/ss3.png)
+*Drag & drop file uploads with real-time file management*
+
 ## 🛠 Technologies Used
 
 - **Backend**: Node.js, Express.js
