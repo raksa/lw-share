@@ -1,24 +1,24 @@
 "use strict";
 
-import { resolve } from 'node:path';
 import { createServer } from 'node:http';
 import express from 'express';
 
 import { init as initHttpApp } from './httpApp.mjs';
 import { init as initFileApp } from './fileApp.mjs';
 import { init as initChatApp } from './chatApp.mjs';
+import { getDirPath } from './helpers.mjs';
 
 export const app = express();
 export const httpServer = createServer(app);
 
-export function init(filesStorePath, port) {
+export async function init(filesStorePath, port) {
     app.set('port', port);
 
     const option = {
         app,
         httpServer,
         filesStorePath,
-        publicPath: resolve('public')
+        publicPath: getDirPath('public')
     }
     initFileApp(option);
     initChatApp(option);

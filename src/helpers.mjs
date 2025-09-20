@@ -1,9 +1,10 @@
 "use strict";
 
 import { existsSync, statSync, readdir } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { networkInterfaces } from 'node:os';
 import { image as qrGenQRImage } from "qr-image";
+import { fileURLToPath } from 'node:url';
 
 export function getUrlList(port, pathname) {
     var interfaces = networkInterfaces();
@@ -83,4 +84,8 @@ export function listFiles(targetPath) {
             }
         })
     });
+}
+const __dirname = dirname(fileURLToPath(import.meta.url));
+export function getDirPath(targetPath) {
+    return resolve(__dirname, '..', targetPath);
 }

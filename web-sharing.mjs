@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 
-import net from 'node:net';
-import fs from 'node:fs';
-import path from 'node:path';
+import { createServer } from 'node:net';
+import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import qrCode from 'qrcode-terminal';
 import { getUrlList } from './src/helpers.mjs';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
-    const packageJson = JSON.parse(fs.readFileSync(path.resolve('./package.json')));
+    const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json')));
     const commander = await import('commander');
     const defaultDir = './share';
     const command = commander.program
@@ -19,13 +21,13 @@ async function main() {
     let dir = command.getOptionValue('dir');
     if (!dir) {
         console.log(`No directory specified, using default: ${defaultDir}`);
-        dir = path.resolve(defaultDir);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
+        dir = resolve(defaultDir);
+        if (!existsSync(dir)) {
+            mkdirSync(dir, { recursive: true });
         }
     } else {
-        dir = path.resolve(dir);
-        if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+        dir = resolve(dir);
+        if (!existsSync(dir) || !statSync(dir).isDirectory()) {
             console.error('Error: Invalid directory to share.');
             process.exit(1);
         }
@@ -41,10 +43,10 @@ async function main() {
     }
     if (!port) {
         console.log('No port specified, picking an available port...');
-        const tempServer = net.createServer(function (sock) {
+        const tempServer = createServer((sock) => {
             sock.end('HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK');
         });
-        tempServer.listen(0, function () {
+        tempServer.listen(0, () => {
             console.log('Listening on port ' + tempServer.address().port);
         });
         port = tempServer.address().port;
@@ -54,17 +56,17 @@ async function main() {
     console.log('Starting web-sharing...');
     const { init: initApp, httpServer } = await import('./src/index.mjs');
     initApp(dir, port);
-    httpServer.on('listening', function () {
+    httpServer.on('listening', () => {
         const addr = httpServer.address();
         if (typeof addr === 'string') {
             console.log(`Listening on pipe ${addr}`);
         } else {
             console.log('Listening on:');
             const urls = getUrlList(port);
-            urls.forEach(function (url) {
+            urls.forEach((url) => {
                 console.log('-------------------');
                 console.log(url);
-                qrCode.generate(url, { small: true }, function (printable) {
+                qrCode.generate(url, { small: true }, (printable) => {
                     console.log(printable);
                 });
             });
