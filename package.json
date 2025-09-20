@@ -21,7 +21,7 @@
         "url": "git://github.com/raksa/web-sharing.git"
     },
     "engines": {
-        "node": ">=0.13.x"
+        "node": ">=0.18.x"
     },
     "dependencies": {
         "commander": "^14.0.1",
