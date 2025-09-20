@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Web Sharing (chat)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#006900">
+
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/chatApp.css">
+</head>
+
+<body>
+    <div class="container d-flex flex-column h-100" style="overflow: hidden;">
+        <div class="w-100">
+            <script>
+                function toggleQR() {
+                    const qrDiv = document.getElementById('info');
+                    const parentDiv = qrDiv.parentElement;
+                    if (!parentDiv) return;
+                    if (parentDiv.style.display === 'none') {
+                        parentDiv.style.display = 'block';
+                    } else {
+                        parentDiv.style.display = 'none';
+                    }
+                }
+            </script>
+            <div class="w-100" style="display: none;">
+                <div id="info" class="w-100 d-flex justify-content-center flex-wrap" style="overflow: auto;"></div>
+            </div>
+            <div class="btn-group m-3" role="group" aria-label="Navigation Buttons">
+                <a href="/" class="btn btn-outline-primary">Home</a>
+                <button type="button" class="btn btn-outline-primary" onclick="toggleQR()">
+                    Toggle QR
+                </button>
+            </div>
+        </div>
+        <div class="w-100 h-100 card" style="overflow: hidden;">
+            <div id="snackbar" class="card-header"></div>
+            <ul class="card-body pages" style="overflow: hidden;">
+                <li class="w-100 h-100 card chat page" style="overflow: hidden;">
+                    <div class="card-body chatArea" style="overflow-y: auto;">
+                        <ul class="messages p-0"></ul>
+                    </div>
+                    <div class="card-footer p-1">
+                        <input class="w-100 h-100 inputMessage" placeholder="Type here..." />
+                    </div>
+                </li>
+                <li class="login page">
+                    <div class="form">
+                        <h3 class="title">What's your nickname?</h3>
+                        <input class="usernameInput" type="text" maxlength="14" />
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="/js/jquery-3.7.1.min.js"></script>
+    <script src="/js/socket.io.js"></script>
+    <script src="/js/chatApp.js"></script>
+    <script src="/js/qr.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Web Sharing (files)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#006900">
+
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" type="text/css" href="/css/fileApp.css">
+</head>
+
+<body>
+    <div class="container d-flex flex-column h-100" style="overflow: hidden;">
+        <div class="w-100">
+            <script>
+                function toggleQR() {
+                    const qrDiv = document.getElementById('info');
+                    const parentDiv = qrDiv.parentElement;
+                    if (!parentDiv) return;
+                    if (parentDiv.style.display === 'none') {
+                        parentDiv.style.display = 'block';
+                    } else {
+                        parentDiv.style.display = 'none';
+                    }
+                }
+            </script>
+            <div class="w-100" style="display: none;">
+                <div id="info" class="w-100 d-flex justify-content-center flex-wrap" style="overflow: auto;"></div>
+            </div>
+            <div class="btn-group m-3" role="group" aria-label="Navigation Buttons">
+                <a href="/" class="btn btn-outline-primary">Home</a>
+                <button type="button" class="btn btn-outline-primary" onclick="toggleQR()">
+                    Toggle QR
+                </button>
+            </div>
+        </div>
+        <div class="d-flex flex-grow-1 justify-content-center align-items-center" style="overflow: auto;">
+            <div>
+                <form ref='uploadForm' id='uploadForm' action="" method="POST" enctype="multipart/form-data">
+                    <p>Drag file in page or click below:</p>
+                    <div id="fileToUploadButtonBox">
+                        <div id="fileToUploadBtn" class="btn btn-primary">
+                            <span class="button-text">Choose File:</span>
+                            <input type="file" name="fileToUpload" id="fileToUpload" multiple />
+                        </div>
+                    </div>
+                </form>
+                <br>
+                <div id="successPanel" class="panel panel-success" style="display: none;">
+                    <div class="panel-body text-center">
+                        <p class="text-success" style="margin:0;">File uploaded as "<span id="fileSuccessName"></span>"
+                        </p>
+                    </div>
+                </div>
+                <div id="errorPanel" class="panel panel-danger" style="display: none;">
+                    <div class="panel-body text-center">
+                        <p class="text-danger" style="margin:0;">File upload failed.</p>
+                    </div>
+                </div>
+                <br>
+                <div class="card">
+                    <div class="card-header">Uploaded Files</div>
+                    <div class="card-body" style="max-height: 300px; overflow: auto;">
+                        <ul id="fileList" class="list-group"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="successoverlay">
+            <span class="title noselect">&nbsp;&nbsp;&nbsp;Uploading...</span>
+        </div>
+    </div>
+
+    <script src="/js/qr.js"></script>
+    <script src="/js/fileList.js"></script>
+    <script src="/js/fileApp.js"></script>
+</body>
+
+</html>

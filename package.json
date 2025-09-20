@@ -1,0 +1,33 @@
+{
+    "name": "web-sharing",
+    "version": "0.0.1",
+    "author": "Raksa Eng <eng.raksa@gmail.com>",
+    "description": "A simple static http file sharing and chat server",
+    "keywords": [
+        "http",
+        "share",
+        "static",
+        "server",
+        "chat"
+    ],
+    "main": "./src/index.mjs",
+    "type": "module",
+    "license": "MIT",
+    "bin": {
+        "http-sharing": "./http-sharing.mjs"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/raksa/web-sharing.git"
+    },
+    "engines": {
+        "node": ">=0.13.x"
+    },
+    "dependencies": {
+        "commander": "^14.0.1",
+        "express": "^5.1.0",
+        "qr-image": "^3.2.0",
+        "qrcode-terminal": "^0.12.0",
+        "socket.io": "^4.8.1"
+    }
+}
