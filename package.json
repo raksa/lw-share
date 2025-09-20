@@ -14,14 +14,34 @@
     "type": "module",
     "license": "MIT",
     "bin": {
-        "http-sharing": "./http-sharing.mjs"
+        "web-sharing": "./web-sharing.mjs"
     },
     "repository": {
         "type": "git",
-        "url": "git://github.com/raksa/web-sharing.git"
+        "url": "https://github.com/raksa/web-sharing.git"
+    },
+    "homepage": "https://github.com/raksa/web-sharing#readme",
+    "bugs": {
+        "url": "https://github.com/raksa/web-sharing/issues"
     },
     "engines": {
-        "node": ">=0.18.x"
+        "node": ">=18.0.0"
+    },
+    "preferGlobal": true,
+    "files": [
+        "web-sharing.mjs",
+        "src/",
+        "public/",
+        "README.md",
+        "LICENSE"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "start": "node web-sharing.mjs",
+        "cli": "node web-sharing.mjs",
+        "test": "echo \"No tests specified\" && exit 0"
     },
     "dependencies": {
         "commander": "^14.0.1",
