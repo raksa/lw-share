@@ -92,7 +92,7 @@ export function init({ app, filesStorePath, publicPath }) {
 
                                             writeFileSync(filePath, fileContent);
                                             uploadedFiles.push(finalName);
-                                            console.log(`File saved: ${finalName}`);
+                                            console.log(`File saved: ${filePath}`);
                                         } catch (error) {
                                             console.error(`Error saving file ${finalName}:`, error);
                                             hasErrors = true;
