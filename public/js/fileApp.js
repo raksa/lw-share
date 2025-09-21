@@ -1,20 +1,8 @@
 "use strict";
 
-function deleteFile(fileName) {
-    if (!confirm("Are you sure?")) {
-        return;
-    }
-    const request = new XMLHttpRequest()
-    request.open('DELETE', `/files/${fileName}`, true)
-    request.send();
-    getFileList();
-}
-
 const queryText = location.search;
-window.history.pushState('obj', document.title, "http://" + location.host + location.pathname);
-
-const successIndex = queryText.startsWith("?success=");
-if (successIndex) {
+const successQuery = queryText.startsWith("?success=");
+if (successQuery) {
     const successPanel = document.getElementById('successPanel');
     successPanel?.style.removeProperty('display');
 
@@ -26,29 +14,30 @@ if (successIndex) {
     errorPanel?.style.removeProperty('display');
 }
 
-const fileToUploadBtn = document.getElementById('fileToUploadBtn');
+const fileToUploadBtn = document.getElementById('file-to-upload-btn');
 
 document.body.ondragover = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    const x = event.pageX;
-    const y = event.pageY;
-
+    fileToUploadBtn.style.zIndex = 999999;
     fileToUploadBtn.style.position = "fixed";
-    fileToUploadBtn.style.top = (y - 11) + "px";
-    fileToUploadBtn.style.left = (x - 40) + "px";
+    fileToUploadBtn.style.left = (event.pageX - 50) + "px";
+    fileToUploadBtn.style.top = (event.pageY - 10) + "px";
 
 };
 
 const fixButtonBack = () => {
-    fileToUploadBtn.style.position = "static";
+    delete fileToUploadBtn.style.position;
+    delete fileToUploadBtn.style.left;
+    delete fileToUploadBtn.style.top;
+    delete fileToUploadBtn.style.zIndex;
 }
 document.body.ondragend = fixButtonBack;
 document.body.ondragexit = fixButtonBack;
-document.body.ondragleave = (e) => {
-    if (e.target == fileToUpload
-        || e.pageX <= 10 || e.pageX >= window.innerWidth - 10
-        || e.pageY <= 10 || e.pageY >= window.innerHeight - 10) {
+document.body.ondragleave = (event) => {
+    if (event.target == fileToUploadDom
+        || event.pageX <= 10 || event.pageX >= window.innerWidth - 10
+        || event.pageY <= 10 || event.pageY >= window.innerHeight - 10) {
         fixButtonBack();
     }
 }
@@ -56,20 +45,35 @@ document.body.ondrop = (event) => {
     fixButtonBack();
     event.preventDefault();
     event.stopPropagation();
-    document.body.classList.add("success");
+    document.body.classList.add("uploading");
+
+    fileToUploadDom.files = event.dataTransfer.files;
+
     setTimeout(() => {
-        fileToUpload.form.submit();
+        fileToUploadDom.form.submit();
     }, 1);
 }
 
 
-const fileToUpload = document.getElementById('fileToUpload');
-fileToUpload.value = null;
-fileToUpload.onchange = (event) => {
+const fileToUploadDom = document.getElementById('file-to-upload');
+fileToUploadDom.value = null;
+fileToUploadDom.onchange = (event) => {
     event.stopPropagation();
     event.preventDefault();
-    document.body.classList.add("success");
+    document.body.classList.add("uploading");
     setTimeout(() => {
-        fileToUpload.form.submit();
-    }, 1);
+        fileToUploadDom.form.submit();
+    }, 10);
 }
+
+function deleteFile(fileName) {
+    if (!confirm("File '" + fileName + "' will be deleted. Are you sure?")) {
+        return;
+    }
+    const request = new XMLHttpRequest()
+    request.open('DELETE', `/files/${fileName}`, true)
+    request.send();
+    getFileList();
+}
+
+window.history.pushState('obj', document.title, `http://${location.host}${location.pathname}`);

@@ -1,32 +1,45 @@
 body {
+    width: 100%;
+    height: 100%;
     margin: 0;
-    height: 100vh;
-    width: 100vw;
+    padding: 0;
 }
 
-#successoverlay {
+#file-to-upload-btn-container {
+    height: 56px;
+    padding: 17px;
+}
+
+#file-to-upload-btn {
+    display: inline-block;
+}
+
+#file-to-upload-btn .button-text {
+    font-size: 14px;
+}
+
+#success-overlay {
     display: none;
-    z-index: 1000;
+    z-index: 99;
 }
 
-body.success>#successoverlay {
+body.uploading>#success-overlay {
     display: block;
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(0, 0, 0, 0.65);
-    z-index: 1000;
+    z-index: 99;
     text-align: center;
     padding: 10vw;
+    background: rgba(9, 9, 19, 0.583);
 }
 
-body.success>#successoverlay>.title {
-    color: white;
-    font-family: monospace;
-    font-size: 64px;
-    text-shadow: 0 0 20px black;
+body.uploading>#success-overlay>.title {
+    text-shadow: 0 0 15px rgba(0, 0, 0, 0.919);
+    color: rgb(235, 235, 235);
+    font-size: 55px;
 }
 
 .noselect {
@@ -39,21 +52,5 @@ body.success>#successoverlay>.title {
 }
 
 #info {
-    color: #0af;
-    font-family: monospace;
-    line-height: 40px;
-}
-
-#fileToUploadButtonBox {
-    height: 65px;
-    padding-top: 20px;
-}
-
-#fileToUploadBtn {
-    display: inline-block;
-}
-
-#fileToUploadBtn .button-text {
-    font-size: 12px;
-    line-height: 22px;
+    color: rgb(57, 14, 143);
 }

@@ -15,24 +15,31 @@ export function init({ app, filesStorePath, publicPath }) {
 
     app.use(`${baseRoutePath}/`, express.static(filesStorePath));
 
+    function redirectSuccess(res, message) {
+        setCorsHeaders(res);
+        res.redirect(`${baseRoutePath}/?success=` + encodeURIComponent(message));
+    }
+    function redirectError(res, message) {
+        setCorsHeaders(res);
+        res.redirect(`${baseRoutePath}/?error=` + encodeURIComponent(message));
+    }
     app.post(`${baseRoutePath}/`, (req, res) => {
         const contentType = req.headers['content-type'];
         if (contentType && contentType.startsWith('multipart/form-data')) {
             const boundary = contentType.split('boundary=')[1];
             if (!boundary) {
-                return res.redirect(`${baseRoutePath}/?error=${encodeURIComponent('Invalid boundary')}`);
+                return redirectError(res, 'Invalid boundary');
             }
 
             let fileData = Buffer.from('');
-            const maxFileSize = 100 * 1024 * 1024; // 100MB limit
+            const maxFileSize = 100 * 1024 * 1024;
 
             req.on('data', (chunk) => {
                 fileData = Buffer.concat([fileData, chunk]);
 
-                // Check file size limit
                 if (fileData.length > maxFileSize) {
                     req.destroy();
-                    return res.redirect(`${baseRoutePath}/?error=${encodeURIComponent('File too large (max 100MB)')}`);
+                    return redirectError(res, 'File too large (max 100MB)');
                 }
             });
 
@@ -56,15 +63,13 @@ export function init({ app, filesStorePath, publicPath }) {
                     let hasErrors = false;
 
                     for (const part of parts) {
-                        const partString = part.toString('binary', 0, Math.min(part.length, 1024)); // Only convert header portion to string
+                        const partString = part.toString('binary', 0, Math.min(part.length, 1024));
                         if (partString.includes('filename=') && !partString.includes('filename=""')) {
                             const filenameMatch = partString.match(/filename="([^"]+)"/);
                             if (filenameMatch && filenameMatch[1]) {
-                                // Sanitize filename to prevent directory traversal
                                 const rawFilename = filenameMatch[1];
                                 let finalName = rawFilename.replace(/[/\\:*?"<>|]/g, '_').replace(/^\.+/, '');
 
-                                // Ensure filename is not empty after sanitization
                                 if (!finalName || finalName.trim() === '') {
                                     finalName = `uploaded_file_${Date.now()}`;
                                 }
@@ -79,7 +84,6 @@ export function init({ app, filesStorePath, publicPath }) {
                                         try {
                                             const filePath = resolve(filesStorePath, finalName);
 
-                                            // Remove existing file if it exists and is valid
                                             if (checkIsValidFile(filesStorePath, finalName)) {
                                                 unlinkSync(filePath);
                                             }
@@ -97,36 +101,34 @@ export function init({ app, filesStorePath, publicPath }) {
                         }
                     }
 
-                    setCorsHeaders(res);
                     if (uploadedFiles.length > 0) {
                         const message = uploadedFiles.length === 1
                             ? `File uploaded: ${uploadedFiles[0]}`
                             : `${uploadedFiles.length} files uploaded: ${uploadedFiles.join(', ')}`;
-                        res.redirect(`${baseRoutePath}/?success=` + encodeURIComponent(message));
+                        redirectSuccess(res, message);
                     } else if (hasErrors) {
-                        res.redirect(`${baseRoutePath}/?error=${encodeURIComponent('Some files failed to upload')}`);
+                        redirectError(res, 'Some files failed to upload');
                     } else {
-                        res.redirect(`${baseRoutePath}/?error=${encodeURIComponent('No valid files found')}`);
+                        redirectError(res, 'No valid files found');
                     }
                 } catch (error) {
                     console.error('Error processing upload:', error);
-                    res.redirect(`${baseRoutePath}/?error=${encodeURIComponent('Upload processing failed')}`);
+                    redirectError(res, 'Upload processing failed');
                 }
             });
 
             req.on('error', (error) => {
                 console.error('Upload request error:', error);
-                res.redirect(`${baseRoutePath}/?error=${encodeURIComponent('Upload request failed')}`);
+                redirectError(res, 'Upload request failed');
             });
         } else {
-            res.redirect(`${baseRoutePath}/?error=${encodeURIComponent('Invalid Content-Type')}`);
+            redirectError(res, 'Invalid Content-Type');
         }
     });
 
     app.delete(`${baseRoutePath}/:filename`, (req, res) => {
         const filename = req.params.filename;
 
-        // Basic filename validation
         if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
             setCorsHeaders(res);
             return res.status(400).send('Invalid filename');

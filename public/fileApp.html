@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <title>Web Sharing (files)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#006900">
+    <meta name="theme-color" content="#336900">
 
     <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/style.css">
@@ -40,24 +40,24 @@
         <div class="d-flex flex-grow-1 justify-content-center align-items-center" style="overflow: auto;">
             <div>
                 <form ref='uploadForm' id='uploadForm' action="" method="POST" enctype="multipart/form-data">
-                    <p>Drag file in page or click below:</p>
-                    <div id="fileToUploadButtonBox">
-                        <div id="fileToUploadBtn" class="btn btn-primary">
+                    <p>Drag file here or submit below:</p>
+                    <div id="file-to-upload-btn-container">
+                        <div id="file-to-upload-btn" class="btn btn-primary">
                             <span class="button-text">Choose File:</span>
-                            <input type="file" name="fileToUpload" id="fileToUpload" multiple />
+                            <input type="file" name="file-to-upload" id="file-to-upload" multiple />
                         </div>
                     </div>
                 </form>
                 <br>
                 <div id="successPanel" class="panel panel-success" style="display: none;">
                     <div class="panel-body text-center">
-                        <p class="text-success" style="margin:0;">File uploaded as "<span id="fileSuccessName"></span>"
+                        <p class="text-success" style="margin:0;">File uploaded: "<span id="fileSuccessName"></span>"
                         </p>
                     </div>
                 </div>
                 <div id="errorPanel" class="panel panel-danger" style="display: none;">
                     <div class="panel-body text-center">
-                        <p class="text-danger" style="margin:0;">File upload failed.</p>
+                        <p class="text-danger" style="margin:0;">Fail to upload file</p>
                     </div>
                 </div>
                 <br>
@@ -69,8 +69,8 @@
                 </div>
             </div>
         </div>
-        <div id="successoverlay">
-            <span class="title noselect">&nbsp;&nbsp;&nbsp;Uploading...</span>
+        <div id="success-overlay">
+            <span class="title noselect">Uploading!</span>
         </div>
     </div>
 
