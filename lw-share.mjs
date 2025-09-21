@@ -13,8 +13,10 @@ async function main() {
     const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json')));
     const commander = await import('commander');
     const defaultDir = './share';
+    // add title and description to commander
     const command = commander.program
         .version(packageJson.version)
+        .description(packageJson.description)
         .option('-D, --dir <dir>', `Target directory to share (default: ${defaultDir})`)
         .option('-P, --port <port>', 'Port for server to run on (default: will pick an available port)')
         .parse(process.argv);
