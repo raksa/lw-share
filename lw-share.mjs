@@ -13,7 +13,6 @@ async function main() {
     const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json')));
     const commander = await import('commander');
     const defaultDir = './share';
-    // add title and description to commander
     const command = commander.program
         .version(packageJson.version)
         .description(packageJson.description)
