@@ -1,7 +1,7 @@
 "use strict";
 
 import express from 'express';
-import { join } from 'node:path';
+import { resolve } from 'node:path';
 import { getAddressesWithQR, setCorsHeaders, listFiles } from './helpers.mjs';
 
 export function init({ app, filesStorePath, publicPath }) {
@@ -37,7 +37,8 @@ export function init({ app, filesStorePath, publicPath }) {
 
     app.use((err, _req, res, _next) => {
         if (err.status == 404) {
-            res.sendFile(join(publicPath, 'index.html'));
+            const filePath = resolve(publicPath, 'index.html');
+            res.sendFile(filePath, { dotfiles: 'allow' });
         } else {
             res.sendStatus(500);
         }

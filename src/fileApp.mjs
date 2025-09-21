@@ -1,7 +1,7 @@
 "use strict";
 
 import { unlinkSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import express from 'express';
 
 import { setCorsHeaders, checkIsValidFile, listFiles } from './helpers.mjs';
@@ -10,7 +10,9 @@ export function init({ app, filesStorePath, publicPath }) {
     const baseRoutePath = '/files'
 
     app.get(`${baseRoutePath}/`, (_req, res) => {
-        res.sendFile(join(publicPath, 'fileApp.html'));
+        const filePath = resolve(publicPath, 'fileApp.html');
+        console.log(`Serving file app: ${filePath}`);
+        res.sendFile(filePath, { dotfiles: 'allow' });
     });
 
     app.use(`${baseRoutePath}/`, express.static(filesStorePath));

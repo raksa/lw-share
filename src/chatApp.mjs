@@ -1,6 +1,6 @@
 "Use strict";
 
-import { join } from 'node:path';
+import { resolve } from 'node:path';
 import { Server } from 'socket.io';
 
 function initSocket(socket, store) {
@@ -56,7 +56,9 @@ function initSocket(socket, store) {
 
 export function init({ app, httpServer, publicPath }) {
     app.get('/chat/', (_req, res) => {
-        res.sendFile(join(publicPath, 'chatApp.html'));
+        const filePath = resolve(publicPath, 'chatApp.html');
+        console.log(`Serving file app: ${filePath}`);
+        res.sendFile(filePath, { dotfiles: 'allow' });
     });
 
     const io = new Server(httpServer);
