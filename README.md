@@ -69,18 +69,6 @@ This will:
 - Display QR codes for easy mobile access
 - Show all available network URLs
 
-### Command Line Options
-
-```bash
-lw-share [options]
-
-Options:
-  -V, --version       output the version number
-  -D, --dir <dir>     Target directory to share (default: ./share)
-  -P, --port <port>   Port for server to run on (default: auto-detect)
-  -h, --help          display help for command
-```
-
 ### Examples
 
 ```bash
