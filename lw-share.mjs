@@ -53,7 +53,7 @@ async function main() {
         tempServer.close();
     }
 
-    console.log('Starting web-sharing...');
+    console.log('Starting lw-share...');
     const { init: initApp, httpServer } = await import('./src/index.mjs');
     initApp(dir, port);
     httpServer.on('listening', () => {

@@ -1,6 +1,6 @@
-# Web Sharing
+# Local Web Share (lw-share)
 
-[![npm version](https://badge.fury.io/js/web-sharing.svg)](https://badge.fury.io/js/web-sharing)
+[![npm version](https://badge.fury.io/js/lw-share.svg)](https://badge.fury.io/js/lw-share)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
@@ -44,14 +44,14 @@ A lightweight, cross-platform web application for sharing files and chatting ove
 ### Global Installation (Recommended)
 
 ```bash
-npm install -g web-sharing
+npm install -g lw-share
 ```
 
 ### Local Development
 
 ```bash
-git clone https://github.com/raksa/web-sharing.git
-cd web-sharing
+git clone https://github.com/raksa/lw-share.git
+cd lw-share
 npm install
 ```
 
@@ -60,7 +60,7 @@ npm install
 ### Quick Start
 
 ```bash
-web-sharing
+lw-share
 ```
 
 This will:
@@ -72,7 +72,7 @@ This will:
 ### Command Line Options
 
 ```bash
-web-sharing [options]
+lw-share [options]
 
 Options:
   -V, --version       output the version number
@@ -85,13 +85,13 @@ Options:
 
 ```bash
 # Share a specific directory
-web-sharing -D /path/to/your/files
+lw-share -D /path/to/your/files
 
 # Use a specific port
-web-sharing -P 3000
+lw-share -P 3000
 
 # Share your Downloads folder on port 8080
-web-sharing -D ~/Downloads -P 8080
+lw-share -D ~/Downloads -P 8080
 ```
 
 ## 🌟 Features Overview
@@ -119,7 +119,7 @@ web-sharing -D ~/Downloads -P 8080
 When you start the server, you'll see output similar to this:
 
 ```
-Starting web-sharing...
+Starting lw-share...
 Listening on:
 -------------------
 http://192.168.1.100:3000
@@ -192,16 +192,16 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ### Development Setup
 
 ```bash
-git clone https://github.com/raksa/web-sharing.git
-cd web-sharing
+git clone https://github.com/raksa/lw-share.git
+cd lw-share
 npm install
-node web-sharing.mjs
+node lw-share.mjs
 ```
 
 ### Project Structure
 
 ```
-web-sharing/
+lw-share/
 ├── src/
 │   ├── index.mjs        # Main application entry
 │   ├── httpApp.mjs      # HTTP server setup
@@ -214,7 +214,7 @@ web-sharing/
 │   ├── chatApp.html     # Chat interface
 │   ├── css/            # Stylesheets
 │   └── js/             # Client-side JavaScript
-└── web-sharing.mjs      # CLI entry point
+└── lw-share.mjs      # CLI entry point
 ```
 
 1. Fork the repository
@@ -236,7 +236,7 @@ web-sharing/
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/raksa/web-sharing/issues) page
+1. Check the [Issues](https://github.com/raksa/lw-share/issues) page
 2. Create a new issue with detailed information
 3. Include your Node.js version and operating system
 

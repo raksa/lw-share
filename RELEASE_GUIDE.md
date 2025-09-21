@@ -1,6 +1,6 @@
 # Release Guide
 
-This document contains instructions for publishing the `web-sharing` package to the npm registry.
+This document contains instructions for publishing the `lw-share` package to the npm registry.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ Run these commands in order to publish the package:
 
 ### Step 1: Verify Package Structure
 ```bash
-cd <path-to>/web-sharing
+cd <path-to>/lw-share
 npm pack --dry-run
 ```
 This will show you what files will be included in the package without actually creating it.
@@ -44,10 +44,10 @@ This will automatically update `package.json` and create a git commit and tag.
 # Create a tarball and test installation
 npm pack
 PACKAGE_VERSION=$(npm pkg get version | tr -d '"')
-npm install -g "web-sharing-${PACKAGE_VERSION}.tgz"
-web-sharing --help
-npm uninstall -g web-sharing
-rm "web-sharing-${PACKAGE_VERSION}.tgz"
+npm install -g "lw-share-${PACKAGE_VERSION}.tgz"
+lw-share --help
+npm uninstall -g lw-share
+rm "lw-share-${PACKAGE_VERSION}.tgz"
 ```
 
 ### Step 5: Publish to npm Registry
@@ -59,11 +59,11 @@ The package is configured with `"access": "public"` in `publishConfig`, so it wi
 ### Step 6: Verify Publication
 ```bash
 # Check if package is published
-npm view web-sharing
+npm view lw-share
 
 # Test global installation from npm
-npm install -g web-sharing
-web-sharing --help
+npm install -g lw-share
+lw-share --help
 ```
 
 ### Step 7: Push Git Tags
@@ -97,16 +97,16 @@ fi
 echo "Step 4: Testing package locally..."
 npm pack
 PACKAGE_VERSION=$(npm pkg get version | tr -d '"')
-npm install -g "web-sharing-${PACKAGE_VERSION}.tgz"
-web-sharing --help
-npm uninstall -g web-sharing
-rm "web-sharing-${PACKAGE_VERSION}.tgz"
+npm install -g "lw-share-${PACKAGE_VERSION}.tgz"
+lw-share --help
+npm uninstall -g lw-share
+rm "lw-share-${PACKAGE_VERSION}.tgz"
 
 echo "Step 5: Publishing to npm..."
 npm publish
 
 echo "Step 6: Verifying publication..."
-npm view web-sharing
+npm view lw-share
 
 echo "Step 7: Pushing git tags..."
 git push origin main --tags
@@ -117,11 +117,11 @@ echo "✅ Package published successfully!"
 ## Troubleshooting
 
 ### Package Name Conflicts
-If the package name `web-sharing` is already taken on npm:
+If the package name `lw-share` is already taken on npm:
 
 ```bash
 # Option 1: Use a scoped package name
-# Update package.json name to "@yourusername/web-sharing"
+# Update package.json name to "@yourusername/lw-share"
 
 # Option 2: Choose a different name
 # Update package.json name field
@@ -154,6 +154,6 @@ Consider setting up GitHub Actions to automatically publish on version tags:
 
 ## Notes
 
-- The CLI binary `web-sharing` will be available globally after installation
-- The package includes: `web-sharing.mjs`, `src/`, `public/`, `README.md`, `LICENSE`
+- The CLI binary `lw-share` will be available globally after installation
+- The package includes: `lw-share.mjs`, `src/`, `public/`, `README.md`, `LICENSE`
 - Minimum Node.js version required: 18.0.0

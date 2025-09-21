@@ -1,5 +1,5 @@
 {
-    "name": "web-sharing",
+    "name": "lw-share",
     "version": "0.0.1",
     "author": "Raksa Eng <eng.raksa@gmail.com>",
     "description": "A simple static http file sharing and chat server",
@@ -14,22 +14,22 @@
     "type": "module",
     "license": "MIT",
     "bin": {
-        "web-sharing": "./web-sharing.mjs"
+        "lw-share": "./lw-share.mjs"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/raksa/web-sharing.git"
+        "url": "https://github.com/raksa/lw-share.git"
     },
-    "homepage": "https://github.com/raksa/web-sharing#readme",
+    "homepage": "https://github.com/raksa/lw-share#readme",
     "bugs": {
-        "url": "https://github.com/raksa/web-sharing/issues"
+        "url": "https://github.com/raksa/lw-share/issues"
     },
     "engines": {
         "node": ">=18.0.0"
     },
     "preferGlobal": true,
     "files": [
-        "web-sharing.mjs",
+        "lw-share.mjs",
         "src/",
         "public/",
         "README.md",
@@ -39,8 +39,8 @@
         "access": "public"
     },
     "scripts": {
-        "start": "node web-sharing.mjs",
-        "cli": "node web-sharing.mjs",
+        "start": "node lw-share.mjs",
+        "cli": "node lw-share.mjs",
         "test": "echo \"No tests specified\" && exit 0"
     },
     "dependencies": {
