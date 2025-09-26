@@ -31,6 +31,10 @@ A lightweight, cross-platform web application for sharing files and chatting ove
 ![File Sharing Interface](screenshots/ss3.png)
 *Drag & drop file uploads with real-time file management*
 
+### QR Code Generation
+![QR Code Generation Interface](screenshots/ss4.png)
+*Generate QR codes for easy sharing and access*
+
 ## 🛠 Technologies Used
 
 - **Backend**: Node.js, Express.js
@@ -41,7 +45,49 @@ A lightweight, cross-platform web application for sharing files and chatting ove
 
 ## 📦 Installation
 
-### Global Installation (Recommended)
+### Usage
+
+```bash
+npm install lw-share
+```
+
+```javascript
+"use strict";
+
+const {
+    init: initApp, httpServer, getUrlList, getRandomPort,
+} = require('lw-share');
+
+getRandomPort().then((port) => {
+    const dir = './share'; // Directory to share
+
+    console.log('Starting lw-share...');
+    initApp(dir, port);
+    httpServer.on('listening', () => {
+        console.log('Listening on:');
+        const urls = getUrlList(port);
+        urls.forEach((url) => {
+            console.log(url);
+        });
+    });
+    httpServer.listen(port);
+});
+
+```
+
+ES Module:
+
+
+```javascript
+"use strict";
+
+import {
+    init as initApp, httpServer, getUrlList, getRandomPort,
+} from 'lw-share';
+
+```
+
+### Global Installation
 
 ```bash
 npm install -g lw-share

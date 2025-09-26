@@ -1,3 +1,5 @@
+"use strict";
+
 function copyText(e) {
     if (!window.isSecureContext) {
         return;

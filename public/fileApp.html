@@ -15,18 +15,6 @@
 <body>
     <div class="container d-flex flex-column h-100" style="overflow: hidden;">
         <div class="w-100">
-            <script>
-                function toggleQR() {
-                    const qrDiv = document.getElementById('info');
-                    const parentDiv = qrDiv.parentElement;
-                    if (!parentDiv) return;
-                    if (parentDiv.style.display === 'none') {
-                        parentDiv.style.display = 'block';
-                    } else {
-                        parentDiv.style.display = 'none';
-                    }
-                }
-            </script>
             <div class="w-100" style="display: none;">
                 <div id="info" class="w-100 d-flex justify-content-center flex-wrap" style="overflow: auto;"></div>
             </div>

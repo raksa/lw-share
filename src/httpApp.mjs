@@ -38,6 +38,7 @@ export function init({ app, filesStorePath, publicPath }) {
     app.use((err, _req, res, _next) => {
         if (err.status == 404) {
             const filePath = resolve(publicPath, 'index.html');
+            console.log(filePath);
             res.sendFile(filePath, { dotfiles: 'allow' });
         } else {
             res.sendStatus(500);

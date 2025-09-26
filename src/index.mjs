@@ -6,7 +6,9 @@ import express from 'express';
 import { init as initHttpApp } from './httpApp.mjs';
 import { init as initFileApp } from './fileApp.mjs';
 import { init as initChatApp } from './chatApp.mjs';
+import { init as initQRCoder } from './qrCoder.mjs';
 import { getDirPath } from './helpers.mjs';
+import { myConsole } from './consoleHelpers.mjs';
 
 export const app = express();
 export const httpServer = createServer(app);
@@ -22,6 +24,7 @@ export async function init(filesStorePath, port) {
     }
     initFileApp(option);
     initChatApp(option);
+    initQRCoder(option);
     initHttpApp(option);
 
     return () => {
@@ -29,14 +32,18 @@ export async function init(filesStorePath, port) {
             const addr = httpServer.address();
 
             if (typeof addr === 'string') {
-                console.log(`Listening on pipe ${addr}`);
+                myConsole.log(`Listening on pipe ${addr}`);
             } else {
                 fileShare.addresses.forEach((address) => {
                     const url = `http://${address}:${addr.port}`;
-                    console.log(`Listening on ${url}`);
+                    myConsole.log(`Listening on ${url}`);
                 });
             }
         });
         httpServer.listen(app.get('port'));
     }
 }
+
+export * from './helpers.mjs';
+export * from './consoleHelpers.mjs';
+export * as qrCode from 'qrcode-terminal';

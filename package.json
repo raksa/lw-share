@@ -1,6 +1,6 @@
 {
     "name": "lw-share",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "author": "Raksa Eng <eng.raksa@gmail.com>",
     "description": "Local Web Share: A simple static http file sharing and chat server",
     "keywords": [
@@ -11,6 +11,7 @@
         "chat"
     ],
     "main": "./src/index.mjs",
+    "types": "./src/index.d.ts",
     "type": "module",
     "license": "MIT",
     "bin": {
@@ -50,5 +51,9 @@
         "qr-image": "^3.2.0",
         "qrcode-terminal": "^0.12.0",
         "socket.io": "^4.8.1"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.3",
+        "@types/qrcode-terminal": "^0.12.2"
     }
 }

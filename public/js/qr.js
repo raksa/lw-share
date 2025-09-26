@@ -1,5 +1,16 @@
 "use strict";
 
+function toggleQR() {
+    const qrDiv = document.getElementById('info');
+    const parentDiv = qrDiv.parentElement;
+    if (!parentDiv) return;
+    if (parentDiv.style.display === 'none') {
+        parentDiv.style.display = 'block';
+    } else {
+        parentDiv.style.display = 'none';
+    }
+}
+
 function updateAddress({ addressesWithQRList }) {
     const infoContainer = document.getElementById('info');
     if (!infoContainer) {

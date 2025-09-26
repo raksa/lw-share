@@ -4,6 +4,8 @@ import { unlinkSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import express from 'express';
 
+import { myConsole } from './consoleHelpers.mjs';
+
 import { setCorsHeaders, checkIsValidFile, listFiles } from './helpers.mjs';
 
 export function init({ app, filesStorePath, publicPath }) {
@@ -11,7 +13,7 @@ export function init({ app, filesStorePath, publicPath }) {
 
     app.get(`${baseRoutePath}/`, (_req, res) => {
         const filePath = resolve(publicPath, 'fileApp.html');
-        console.log(`Serving file app: ${filePath}`);
+        myConsole.log(filePath);
         res.sendFile(filePath, { dotfiles: 'allow' });
     });
 
@@ -92,9 +94,9 @@ export function init({ app, filesStorePath, publicPath }) {
 
                                             writeFileSync(filePath, fileContent);
                                             uploadedFiles.push(finalName);
-                                            console.log(`File saved: ${filePath}`);
+                                            myConsole.log(`File saved: ${filePath}`);
                                         } catch (error) {
-                                            console.error(`Error saving file ${finalName}:`, error);
+                                            myConsole.error(`Error saving file ${finalName}:`, error);
                                             hasErrors = true;
                                         }
                                     }
@@ -114,13 +116,13 @@ export function init({ app, filesStorePath, publicPath }) {
                         redirectError(res, 'No valid files found');
                     }
                 } catch (error) {
-                    console.error('Error processing upload:', error);
+                    myConsole.error('Error processing upload:', error);
                     redirectError(res, 'Upload processing failed');
                 }
             });
 
             req.on('error', (error) => {
-                console.error('Upload request error:', error);
+                myConsole.error('Upload request error:', error);
                 redirectError(res, 'Upload request failed');
             });
         } else {
@@ -137,7 +139,7 @@ export function init({ app, filesStorePath, publicPath }) {
         }
 
         const filePath = resolve(filesStorePath, filename);
-        console.log(`Deleting file: ${filePath}`);
+        myConsole.log(`Deleting file: ${filePath}`);
 
         try {
             if (!checkIsValidFile(filesStorePath, filename)) {
@@ -148,9 +150,9 @@ export function init({ app, filesStorePath, publicPath }) {
             unlinkSync(filePath);
             setCorsHeaders(res);
             res.status(200).send('File deleted successfully');
-            console.log(`File deleted: ${filePath}`);
+            myConsole.log(`File deleted: ${filePath}`);
         } catch (err) {
-            console.error(`Error deleting file: ${filePath}`, err);
+            myConsole.error(`Error deleting file: ${filePath}`, err);
             setCorsHeaders(res);
             res.status(500).send('Error deleting file');
         }
@@ -165,7 +167,7 @@ export function init({ app, filesStorePath, publicPath }) {
                 });
             })
             .catch((error) => {
-                console.error('Error listing files:', error);
+                myConsole.error('Error listing files:', error);
                 res.status(500).json({ error: 'Failed to list files' });
             });
     });

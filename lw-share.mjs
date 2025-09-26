@@ -5,7 +5,9 @@ import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import qrCode from 'qrcode-terminal';
-import { getUrlList } from './src/helpers.mjs';
+import {
+    init as initApp, httpServer, getUrlList, myConsole, getRandomPort,
+} from './src/index.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -44,31 +46,27 @@ async function main() {
     }
     if (!port) {
         console.log('No port specified, picking an available port...');
-        const tempServer = createServer((sock) => {
-            sock.end('HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK');
-        });
-        tempServer.listen(0, () => {
-            console.log('Listening on port ' + tempServer.address().port);
-        });
-        port = tempServer.address().port;
-        tempServer.close();
+        port = await getRandomPort();
+        if (!port) {
+            console.error('Error: Unable to get an available port.');
+            process.exit(1);
+        }
     }
 
-    console.log('Starting lw-share...');
-    const { init: initApp, httpServer } = await import('./src/index.mjs');
+    myConsole.log('Starting lw-share...');
     initApp(dir, port);
     httpServer.on('listening', () => {
         const addr = httpServer.address();
         if (typeof addr === 'string') {
-            console.log(`Listening on pipe ${addr}`);
+            myConsole.log(`Listening on pipe ${addr}`);
         } else {
-            console.log('Listening on:');
+            myConsole.log('Listening on:');
             const urls = getUrlList(port);
             urls.forEach((url) => {
-                console.log('-------------------');
-                console.log(url);
+                myConsole.log('-------------------');
+                myConsole.log('\n', url, '\n');
                 qrCode.generate(url, { small: true }, (printable) => {
-                    console.log(printable);
+                    myConsole.log(printable);
                 });
             });
         }

@@ -3,6 +3,8 @@
 import { resolve } from 'node:path';
 import { Server } from 'socket.io';
 
+import { myConsole } from './consoleHelpers.mjs';
+
 function initSocket(socket, store) {
     let addedUser = false;
 
@@ -57,7 +59,7 @@ function initSocket(socket, store) {
 export function init({ app, httpServer, publicPath }) {
     app.get('/chat/', (_req, res) => {
         const filePath = resolve(publicPath, 'chatApp.html');
-        console.log(`Serving file app: ${filePath}`);
+        myConsole.log(filePath);
         res.sendFile(filePath, { dotfiles: 'allow' });
     });
 

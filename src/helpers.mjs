@@ -5,6 +5,7 @@ import { resolve, dirname } from 'node:path';
 import { networkInterfaces } from 'node:os';
 import { image as qrGenQRImage } from "qr-image";
 import { fileURLToPath } from 'node:url';
+import { createServer } from 'node:net';
 
 export function getUrlList(port, pathname) {
     var interfaces = networkInterfaces();
@@ -88,4 +89,17 @@ export function listFiles(targetPath) {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export function getDirPath(targetPath) {
     return resolve(__dirname, '..', targetPath);
+}
+
+export function getRandomPort() {
+    return new Promise((resolve) => {
+        const tempServer = createServer((sock) => {
+            sock.end('HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK');
+        });
+        tempServer.listen(0, () => {
+            const port = tempServer.address().port;
+            tempServer.close();
+            resolve(port);
+        });
+    });
 }
