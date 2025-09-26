@@ -148,6 +148,11 @@ lw-share -D ~/Downloads -P 8080
 - **Message History**: Persistent chat history during session
 - **Mobile Friendly**: Responsive design for all screen sizes
 
+### QR Code Generation (`/qrCoder/`)
+- **Generate QR Codes**: Create QR codes for any text or URL
+- **Download QR Codes**: Save generated QR codes as PNG images
+- **Mobile Access**: Scan QR codes with your mobile device for quick access
+
 ## 🌐 Network Access
 
 When you start the server, you'll see output similar to this:
