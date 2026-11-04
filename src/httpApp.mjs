@@ -2,7 +2,7 @@
 
 import express from 'express';
 import { resolve } from 'node:path';
-import { getAddressesWithQR, setCorsHeaders, listFiles } from './helpers.mjs';
+import { getAddressesWithQR, setCorsHeaders, listFilesWithStats } from './helpers.mjs';
 
 export function init({ app, filesStorePath, publicPath }) {
 
@@ -12,9 +12,10 @@ export function init({ app, filesStorePath, publicPath }) {
 
     app.get(`${baseRoutePath}/files`, (_req, res) => {
         setCorsHeaders(res);
-        listFiles(filesStorePath).then((filePaths) => {
+        listFilesWithStats(filesStorePath).then((files) => {
             res.json({
-                "fileList": filePaths
+                "fileList": files.map(({ name }) => name),
+                files,
             });
         });
     });

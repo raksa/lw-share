@@ -1,63 +1,162 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
-    <title>Local Web Share (files)</title>
+    <title>QR code · Local Web Share</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#336900">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#212529" media="(prefers-color-scheme: dark)">
+    <script>document.documentElement.setAttribute('data-bs-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
 
     <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" type="text/css" href="/css/fileApp.css">
     <style>
-        #qrImage {
-            display: none;
-            max-width: 100%;
+        .qr-main {
+            max-width: 960px;
+        }
+
+        .qr-panel {
+            height: 100%;
+            padding: 1.25rem;
+        }
+
+        .qr-text {
+            min-height: 9rem;
+            resize: vertical;
+        }
+
+        .qr-result {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            min-height: 20rem;
+            text-align: center;
+        }
+
+        .qr-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .qr-placeholder .icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            opacity: 0.5;
+        }
+
+        .qr-image {
+            width: 100%;
+            max-width: 18rem;
             height: auto;
-            border: 1px solid #000;
-            padding: 10px;
-            margin-top: 10px;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--bs-border-color);
+            background-color: #fff;
+            image-rendering: pixelated;
+            transition: opacity 0.15s;
+        }
+
+        .qr-result.is-loading .qr-image {
+            opacity: 0.5;
+        }
+
+        .qr-result[data-state="empty"] .qr-ready,
+        .qr-result[data-state="ready"] .qr-placeholder {
+            display: none;
+        }
+
+        .qr-ready {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
         }
     </style>
 </head>
 
-<body>
-    <div class="container d-flex flex-column h-100" style="overflow: hidden;">
-        <div class="w-100">
-            <div class="w-100" style="display: none;">
-                <div id="info" class="w-100 d-flex justify-content-center flex-wrap" style="overflow: auto;"></div>
-            </div>
-            <div class="btn-group m-3" role="group" aria-label="Navigation Buttons">
-                <a href="/" class="btn btn-outline-primary">Home</a>
-                <button type="button" class="btn btn-outline-primary" onclick="toggleQR()">
-                    Toggle QR
-                </button>
-            </div>
+<body class="app">
+    <header class="app-header">
+        <div class="container app-header-inner">
+            <a class="app-brand" href="/">
+                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#share" /></svg>Local Web Share
+            </a>
+            <nav class="app-nav" aria-label="Main">
+                <a href="/files/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#folder" /></svg>Files</a>
+                <a href="/chat/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#chat" /></svg>Chat</a>
+                <a href="/qrCoder/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#qr" /></svg>QR code</a>
+            </nav>
+            <button type="button" class="btn btn-outline-primary btn-sm connect-btn" data-connect>
+                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#phone" /></svg>
+                <span class="connect-label-long">Open on another device</span>
+                <span class="connect-label-short">Connect</span>
+            </button>
         </div>
-        <div class="d-flex flex-grow-1 justify-content-center align-items-center" style="overflow: auto;">
-            <form action="/qrCoder/" method="POST">
-                <div>
-                    <div class="mb-3">
-                        <label for="size" class="form-label">QR Code Size</label>
-                        <input type="number" class="form-control" id="size" placeholder="Size in pixels (eg. 500)">
-                    </div>
-                    <div class="mb-3">
-                        <label for="text" class="form-label">Text for QR Code</label>
-                        <textarea class="form-control" id="text" rows="3" placeholder="Enter text here..."></textarea>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary" onclick="submitForm(event)">Generate QR Code</button>
-            </form>
-        </div>
-        <hr>
-        <div class="d-flex flex-column align-items-center">
-            <h3>Generated QR Code:</h3>
-            <img id="qrImage" src="" alt="QR Code">
-        </div>
-    </div>
+    </header>
 
-    <script src="/js/qr.js"></script>
+    <main class="app-main container qr-main">
+        <h1 class="page-title">QR code generator</h1>
+        <p class="page-subtitle">Type text or a link and scan the code with a phone camera. The code updates as you
+            type.</p>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <form class="app-card qr-panel" id="qrForm" novalidate>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-baseline">
+                            <label for="text" class="form-label fw-semibold">Text or link</label>
+                            <span class="small text-secondary" id="charCount" aria-live="polite"></span>
+                        </div>
+                        <textarea class="form-control qr-text" id="text" rows="5" maxlength="2000"
+                            placeholder="e.g. https://example.com or a Wi-Fi password" autofocus></textarea>
+                        <div class="invalid-feedback" id="textError"></div>
+                    </div>
+                    <fieldset class="mb-0">
+                        <legend class="form-label fw-semibold fs-6">Image size</legend>
+                        <div class="btn-group w-100" role="group" aria-label="Image size">
+                            <input type="radio" class="btn-check" name="size" id="sizeSmall" value="250">
+                            <label class="btn btn-outline-primary" for="sizeSmall">Small</label>
+                            <input type="radio" class="btn-check" name="size" id="sizeMedium" value="500" checked>
+                            <label class="btn btn-outline-primary" for="sizeMedium">Medium</label>
+                            <input type="radio" class="btn-check" name="size" id="sizeLarge" value="1000">
+                            <label class="btn btn-outline-primary" for="sizeLarge">Large</label>
+                        </div>
+                        <div class="form-text">Size of the downloaded PNG. Larger is better for printing.</div>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="col-md-6">
+                <section class="app-card qr-panel qr-result" id="qrResult" data-state="empty" aria-label="Generated QR code">
+                    <div class="qr-placeholder">
+                        <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#qr" /></svg>
+                        <span>Your QR code will appear here.</span>
+                    </div>
+                    <div class="qr-ready">
+                        <img class="qr-image" id="qrImage" alt="QR code">
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <a class="btn btn-primary btn-icon" id="downloadQr" download="qr-code.png" href="#">
+                                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#download" /></svg>
+                                Download PNG
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary btn-icon" id="copyQrText">
+                                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#copy" /></svg>
+                                Copy text
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/common.js"></script>
     <script src="/js/qrCoder.js"></script>
 </body>
 

@@ -7,17 +7,41 @@ import { image as qrGenQRImage } from "qr-image";
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
 
-export function getUrlList(port, pathname) {
-    var interfaces = networkInterfaces();
-    const urlList = [];
-    for (const interfaceInfo of Object.values(interfaces)) {
-        for (const address of Object.values(interfaceInfo)) {
+// Host-side adapters of virtual machines and containers (Hyper-V/WSL, VirtualBox,
+// VMware, Parallels, Docker). Windows may give them plain names like "Ethernet",
+// so the MAC vendor prefix is checked as well as the name.
+const VIRTUAL_MAC_PREFIXES = [
+    '00:15:5d', '0a:00:27', '08:00:27', '00:50:56', '00:0c:29', '00:05:69',
+    '00:1c:14', '00:1c:42', '02:42:',
+];
+const VIRTUAL_INTERFACE_NAME = /^(vEthernet|VirtualBox|VMware|vmnet|vboxnet|docker|br-|veth|virbr|lxc|lxd)/i;
+
+function isVirtualInterface(interfaceName, mac) {
+    const lowerMac = (mac || '').toLowerCase();
+    return VIRTUAL_INTERFACE_NAME.test(interfaceName)
+        || VIRTUAL_MAC_PREFIXES.some((prefix) => lowerMac.startsWith(prefix));
+}
+
+function getUrlInfoList(port, pathname) {
+    const interfaces = networkInterfaces();
+    const urlInfoList = [];
+    for (const [interfaceName, interfaceInfo] of Object.entries(interfaces)) {
+        for (const address of interfaceInfo || []) {
             if (address.family === 'IPv4') {
-                urlList.push(`http://${address.address}:${port}${pathname || ''}`);
+                urlInfoList.push({
+                    address: `http://${address.address}:${port}${pathname || ''}`,
+                    interfaceName,
+                    internal: address.internal,
+                    virtual: isVirtualInterface(interfaceName, address.mac),
+                });
             }
         }
     }
-    return urlList;
+    return urlInfoList;
+}
+
+export function getUrlList(port, pathname) {
+    return getUrlInfoList(port, pathname).map(({ address }) => address);
 }
 
 function base64EncodeStream(readableStream) {
@@ -42,11 +66,11 @@ export function genQRImage(text, options) {
 }
 
 export function getAddressesWithQR(port, pathname) {
-    const addresses = getUrlList(port, pathname);
-    const qrPromises = addresses.map((address) => {
-        return genQRImage(address, { type: 'png' }).then((dataUrl) => {
+    const urlInfoList = getUrlInfoList(port, pathname);
+    const qrPromises = urlInfoList.map((urlInfo) => {
+        return genQRImage(urlInfo.address, { type: 'png' }).then((dataUrl) => {
             return {
-                address: address,
+                ...urlInfo,
                 qrCode: dataUrl
             };
         });
@@ -86,6 +110,22 @@ export function listFiles(targetPath) {
         })
     });
 }
+
+export function listFilesWithStats(targetPath) {
+    return listFiles(targetPath).then((fileNames) => {
+        const files = [];
+        for (const name of fileNames) {
+            try {
+                const stats = statSync(resolve(targetPath, name));
+                files.push({ name, size: stats.size, mtime: stats.mtimeMs });
+            } catch {
+                // The file was removed between listing and stat; skip it.
+            }
+        }
+        return files;
+    });
+}
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export function getDirPath(targetPath) {
     return resolve(__dirname, '..', targetPath);

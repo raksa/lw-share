@@ -1,11 +1,344 @@
-body {
-    margin: 0;
-    height: 100vh;
-    width: 100vw;
+/* Shared layout for every lw-share page: header, navigation, dialog, toasts. */
+
+:root {
+    --app-radius: 0.75rem;
+    --app-header-height: 3.5rem;
 }
 
-#info {
-    color: #0af;
-    font-family: monospace;
-    line-height: 40px;
+html,
+body {
+    margin: 0;
+}
+
+body.app {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bs-tertiary-bg);
+}
+
+/* Pages that manage their own scrolling (chat) fill the viewport exactly. */
+body.app-fixed {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+}
+
+.icon {
+    width: 1.15em;
+    height: 1.15em;
+    flex-shrink: 0;
+    vertical-align: -0.2em;
+}
+
+.icon-lg {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+/* Header */
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background-color: var(--bs-body-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.app-header-inner {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    min-height: var(--app-header-height);
+}
+
+.app-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--bs-body-color);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.app-brand:hover {
+    color: var(--bs-primary);
+}
+
+.app-brand .icon {
+    color: var(--bs-primary);
+    width: 1.4rem;
+    height: 1.4rem;
+}
+
+.app-nav {
+    display: flex;
+    gap: 0.25rem;
+    margin-right: auto;
+}
+
+.app-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    color: var(--bs-secondary-color);
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.app-nav a:hover {
+    color: var(--bs-body-color);
+    background-color: var(--bs-secondary-bg);
+}
+
+.app-nav a[aria-current="page"] {
+    color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.connect-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    .app-header-inner {
+        padding-top: 0.4rem;
+    }
+
+    .app-brand {
+        margin-right: auto;
+    }
+
+    /* The navigation drops to its own full-width row of equal tabs. */
+    .app-nav {
+        order: 3;
+        width: 100%;
+        margin-right: 0;
+        padding-bottom: 0.4rem;
+    }
+
+    .app-nav a {
+        flex: 1;
+        justify-content: center;
+        padding: 0.4rem 0.25rem;
+    }
+
+    .connect-btn .connect-label-long {
+        display: none;
+    }
+}
+
+@media (min-width: 576px) {
+    .connect-btn .connect-label-short {
+        display: none;
+    }
+}
+
+/* Main content */
+
+.app-main {
+    flex: 1 1 auto;
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+.app-card {
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--app-radius);
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+    color: var(--bs-secondary-color);
+    margin-bottom: 1.25rem;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.btn-square {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+}
+
+/* "Open on another device" dialog */
+
+.connect-dialog {
+    width: min(30rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    padding: 0;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--app-radius);
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.25);
+}
+
+.connect-dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.connect-dialog-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.25rem 0.5rem;
+}
+
+.connect-dialog-header h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.connect-dialog-body {
+    padding: 0.5rem 1.25rem 1.25rem;
+}
+
+/* Address list (dialog and home page) */
+
+.address-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.address-qr {
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    border-radius: 0.5rem;
+    background-color: #fff;
+    padding: 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    image-rendering: pixelated;
+}
+
+.address-url {
+    font-family: var(--bs-font-monospace);
+    font-size: 1rem;
+    word-break: break-all;
+}
+
+.address-other {
+    margin-top: 1rem;
+}
+
+.address-other summary {
+    color: var(--bs-secondary-color);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.address-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.address-row:last-child {
+    border-bottom: 0;
+}
+
+.address-row .address-url {
+    font-size: 0.9rem;
+}
+
+.address-row-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.address-note {
+    display: block;
+    color: var(--bs-secondary-color);
+    font-size: 0.8rem;
+}
+
+/* Toasts */
+
+.toast-stack {
+    position: fixed;
+    left: 50%;
+    bottom: 1.25rem;
+    transform: translateX(-50%);
+    z-index: 1090;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    /* Toasts only inform; taps go through to whatever is underneath. */
+    pointer-events: none;
+}
+
+.app-toast {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--bs-dark);
+    color: #fff;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.25);
+    font-size: 0.95rem;
+    animation: toast-in 0.15s ease-out;
+}
+
+[data-bs-theme="dark"] .app-toast {
+    background-color: var(--bs-gray-100);
+    color: var(--bs-gray-900);
+}
+
+.app-toast.toast-success .icon {
+    color: var(--bs-success);
+}
+
+.app-toast.toast-error .icon {
+    color: var(--bs-danger);
+}
+
+.app-toast.hiding {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-toast {
+        animation: none;
+    }
 }

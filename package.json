@@ -43,7 +43,10 @@
     "scripts": {
         "start": "node lw-share.mjs",
         "cli": "node lw-share.mjs",
-        "test": "echo \"No tests specified\" && exit 0"
+        "dev:server": "node --watch lw-share.mjs --port 3006",
+        "electron": "electron scripts/electron-dev.mjs --remote-debugging-port=9226",
+        "dev": "concurrently -k -s first -n server,electron -c blue,magenta \"npm run dev:server\" \"npm run electron\"",
+        "test": "node --test test/fileStore.test.mjs"
     },
     "dependencies": {
         "commander": "^14.0.1",
@@ -54,6 +57,8 @@
     },
     "devDependencies": {
         "@types/express": "^5.0.3",
-        "@types/qrcode-terminal": "^0.12.2"
+        "@types/qrcode-terminal": "^0.12.2",
+        "concurrently": "^10.0.6",
+        "electron": "^45.2.2"
     }
 }

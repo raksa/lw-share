@@ -131,27 +131,36 @@ lw-share -D ~/Downloads -P 8080
 ## 🌟 Features Overview
 
 ### 🏠 Home Dashboard (`/`)
-- QR codes for easy mobile device connection
-- Overview of all available network addresses
-- Quick navigation to file sharing and chat features
+- **Connect your phone**: One QR code for the address most likely to work on your Wi-Fi; loopback, link-local and virtual-machine adapters are listed separately under "Not working? Try another address"
+- **Copy link** for every address
+- Quick navigation to files, chat and the QR code generator
+
+Every page has the same header with an **Open on another device** button that shows a QR code for the page you are on, and follows your system's light or dark theme.
 
 ### 📂 File Sharing (`/files/`)
-- **Upload**: Drag & drop files or use the file picker
-- **Download**: Click on any file to download
-- **Delete**: Remove files with confirmation dialog
-- **Real-time Updates**: File list updates automatically across all connected devices
-- **All File Types**: Support for any file format
+A Google-Drive-style explorer for the shared folder.
+- **Folders**: Breadcrumbs, and every folder has its own URL (`/files/Photos/2024/`), so Back/Forward and shared links work
+- **Upload**: New → New folder / File upload / Folder upload, or drag files and whole folders from the desktop onto the page, a folder or a breadcrumb. Pasting a screenshot uploads it
+- **Upload panel**: Per-file progress, cancel and retry, three uploads at a time, and a warning before leaving the page mid-upload. No size limit
+- **No overwrites**: A name that already exists keeps both files (`photo (1).jpg`)
+- **Organize**: Rename (F2), Move to… (folder picker), Delete (Del, with confirmation; permanent, no trash), Download, Copy link. Drag items onto a folder or breadcrumb to move them
+- **Select**: Click, Ctrl/Cmd+click, Shift+click, box-drag or Ctrl+A; right-click or ⋮ for the item menu. On touch screens, tap to open and long-press to select
+- **Views**: List or grid (with image thumbnails), sort by name, date modified or size, and filter the folder
+- **Live**: Changes from other devices appear on their own within a few seconds
+- **Without JavaScript**: A basic upload form still posts to the top folder
 
 ### 💭 Chat (`/chat/`)
 - **Real-time Messaging**: Instant message delivery using WebSockets
-- **User Presence**: See who's online
-- **Message History**: Persistent chat history during session
-- **Mobile Friendly**: Responsive design for all screen sizes
+- **User Presence**: See how many people are online and who is typing
+- **Copy any message** with one tap, even over plain `http://` on a phone
+- **Clickable links** and multi-line messages (Enter sends, Shift+Enter adds a line)
+- **Remembers your name** on each device; rejoins automatically after a reconnect
+- **Not stored**: only people with the chat open receive a message
 
 ### QR Code Generation (`/qrCoder/`)
-- **Generate QR Codes**: Create QR codes for any text or URL
+- **Live preview**: The QR code updates as you type text or a URL
+- **Sizes**: Small, medium or large PNG
 - **Download QR Codes**: Save generated QR codes as PNG images
-- **Mobile Access**: Scan QR codes with your mobile device for quick access
 
 ## 🌐 Network Access
 
@@ -195,7 +204,7 @@ Use any of these URLs to access the application from other devices on your netwo
 - **No Authentication**: Files and chat are accessible to anyone on the network
 - **No Encryption**: Data is transmitted in plain text over HTTP
 - **Local Network Only**: Not designed for internet-facing deployments
-- **File Access**: Anyone with network access can upload, download, and delete files
+- **File Access**: Anyone with network access can upload, download, rename, move and delete files. Deletes are permanent
 
 **Recommended Use Cases:**
 - Home networks
@@ -237,24 +246,55 @@ npm install
 node lw-share.mjs
 ```
 
+#### Desktop dev window (Electron + Chrome DevTools MCP)
+
+```bash
+npm run dev
+```
+
+This starts lw-share on `http://localhost:3006` (restarting when `src/` changes) and opens it in an Electron window that exposes the Chrome remote-debugging port on `127.0.0.1:9226`. Closing the window stops both. The bundled [`.mcp.json`](.mcp.json) (Claude Code) and [`.codex/config.toml`](.codex/config.toml) (Codex) connect [`chrome-devtools-mcp`](https://github.com/ChromeDevTools/chrome-devtools-mcp) to that port, so an AI agent can inspect and drive the running app. See [AGENTS.md](AGENTS.md) for the workflow. Electron is a dev dependency only and is not part of the published package.
+
 ### Project Structure
 
 ```
 lw-share/
 ├── src/
 │   ├── index.mjs        # Main application entry
-│   ├── httpApp.mjs      # HTTP server setup
-│   ├── fileApp.mjs      # File sharing logic
+│   ├── httpApp.mjs      # HTTP server setup, /info routes
+│   ├── fileApp.mjs      # File routes and the /api/files JSON API
+│   ├── fileStore.mjs    # Filesystem operations, confined to the shared folder
 │   ├── chatApp.mjs      # Chat functionality
+│   ├── qrCoder.mjs      # QR code generation route
 │   └── helpers.mjs      # Utility functions
 ├── public/              # Static web files
 │   ├── index.html       # Home page
-│   ├── fileApp.html     # File sharing interface
+│   ├── fileApp.html     # File explorer
 │   ├── chatApp.html     # Chat interface
-│   ├── css/            # Stylesheets
-│   └── js/             # Client-side JavaScript
+│   ├── qrCoder.html     # QR code generator
+│   ├── css/             # Stylesheets (style.css is shared by every page)
+│   ├── img/icons.svg    # Icon sprite
+│   └── js/              # Client-side JavaScript (common.js is shared by every page)
+├── test/                # node --test suites (npm test)
+├── scripts/
+│   └── electron-dev.mjs # Dev-only Electron window (npm run dev)
 └── lw-share.mjs      # CLI entry point
 ```
+
+### HTTP API
+
+| Route | Purpose |
+| --- | --- |
+| `GET /api/files/list?path=<folder>` | List a folder |
+| `POST /api/files/folder` `{path, name}` | Create a folder |
+| `POST /api/files/rename` `{path, name}` | Rename a file or folder |
+| `POST /api/files/move` `{paths, destination}` | Move items into a folder |
+| `POST /api/files/delete` `{paths}` | Delete items (permanent) |
+| `PUT /api/files/upload?path=<folder>&name=<file>` | Upload a raw body; `name` may contain `/` for folder uploads |
+| `GET /info/files` | Files in the top folder: `fileList` (names) and `files` (name, size, mtime) |
+| `GET /info/addresses?pathname=<path>` | Network addresses with QR codes, adapter name and `internal`/`virtual` flags |
+| `POST /qrCoder/` `{text, size}` | Generate a QR code PNG as a data URL |
+
+`/api/files` POSTs require `Content-Type: application/json` (a CSRF guard), and those routes send no CORS headers. The older `POST /files/` (multipart upload) and `DELETE /files/<name>` routes still work.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)

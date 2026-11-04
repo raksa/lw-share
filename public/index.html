@@ -1,27 +1,150 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
     <title>Local Web Share</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#006900">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#212529" media="(prefers-color-scheme: dark)">
+    <script>document.documentElement.setAttribute('data-bs-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
 
     <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .tool-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.1rem 1.25rem;
+            color: var(--bs-body-color);
+            text-decoration: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .tool-card:hover,
+        .tool-card:focus-visible {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0.25rem 1rem rgba(var(--bs-primary-rgb), 0.12);
+            color: var(--bs-body-color);
+        }
+
+        .tool-card+.tool-card {
+            margin-top: 0.75rem;
+        }
+
+        .tool-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.75rem;
+            flex-shrink: 0;
+            color: var(--bs-primary);
+            background-color: var(--bs-primary-bg-subtle);
+        }
+
+        .tool-card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 0.15rem;
+        }
+
+        .tool-card p {
+            margin: 0;
+            color: var(--bs-secondary-color);
+            font-size: 0.95rem;
+        }
+
+        .tool-arrow {
+            margin-left: auto;
+            color: var(--bs-secondary-color);
+        }
+
+        .tool-card:hover .tool-arrow {
+            color: var(--bs-primary);
+        }
+
+        .connect-card {
+            padding: 1.25rem;
+        }
+
+        .connect-card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+    </style>
 </head>
 
-<body>
-    <div class="container d-flex flex-column align-items-center mt-4">
-        <div id="info" class="w-100 d-flex justify-content-center flex-wrap" style="overflow: auto;">
+<body class="app">
+    <header class="app-header">
+        <div class="container app-header-inner">
+            <a class="app-brand" href="/" aria-current="page">
+                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#share" /></svg>Local Web Share
+            </a>
+            <nav class="app-nav" aria-label="Main">
+                <a href="/files/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#folder" /></svg>Files</a>
+                <a href="/chat/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#chat" /></svg>Chat</a>
+                <a href="/qrCoder/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#qr" /></svg>QR code</a>
+            </nav>
+            <button type="button" class="btn btn-outline-primary btn-sm connect-btn" data-connect>
+                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#phone" /></svg>
+                <span class="connect-label-long">Open on another device</span>
+                <span class="connect-label-short">Connect</span>
+            </button>
         </div>
-        <div class="btn-group m-3" role="group" aria-label="Navigation Buttons">
-            <a href="/files/" class="btn btn-outline-primary">File Sharing</a>
-            <a href="/chat/" class="btn btn-outline-primary">Chat</a>
-            <a href="/qrCoder/" class="btn btn-outline-primary">QR Coder</a>
+    </header>
+
+    <main class="app-main container">
+        <h1 class="page-title">Share between devices on your network</h1>
+        <p class="page-subtitle">Move files and text between this computer and your phone. No accounts, no internet,
+            no cloud.</p>
+
+        <div class="row g-4">
+            <div class="col-md-7">
+                <a class="app-card tool-card" href="/files/">
+                    <span class="tool-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/img/icons.svg#folder" /></svg></span>
+                    <div>
+                        <h2>Files</h2>
+                        <p>Upload from one device, download on another.</p>
+                    </div>
+                    <svg class="icon tool-arrow" aria-hidden="true"><use href="/img/icons.svg#arrow-right" /></svg>
+                </a>
+                <a class="app-card tool-card" href="/chat/">
+                    <span class="tool-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/img/icons.svg#chat" /></svg></span>
+                    <div>
+                        <h2>Chat</h2>
+                        <p>Send text and links to every device that has the chat open.</p>
+                    </div>
+                    <svg class="icon tool-arrow" aria-hidden="true"><use href="/img/icons.svg#arrow-right" /></svg>
+                </a>
+                <a class="app-card tool-card" href="/qrCoder/">
+                    <span class="tool-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/img/icons.svg#qr" /></svg></span>
+                    <div>
+                        <h2>QR code</h2>
+                        <p>Turn any text or link into a QR code to scan.</p>
+                    </div>
+                    <svg class="icon tool-arrow" aria-hidden="true"><use href="/img/icons.svg#arrow-right" /></svg>
+                </a>
+            </div>
+
+            <div class="col-md-5">
+                <section class="app-card connect-card" aria-labelledby="connect-title">
+                    <h2 id="connect-title">Connect your phone</h2>
+                    <p class="text-secondary small">Scan with the phone camera. Both devices must be on the same
+                        network.</p>
+                    <div id="home-addresses"></div>
+                </section>
+            </div>
         </div>
-    </div>
-    <script src="/js/qr.js"></script>
+    </main>
+
+    <script src="/js/common.js"></script>
+    <script>
+        LWShare.fillAddresses(document.getElementById('home-addresses'), '/');
+    </script>
 </body>
 
 </html>

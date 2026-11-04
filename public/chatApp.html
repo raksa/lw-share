@@ -3,54 +3,93 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Local Web Share (chat)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#006900">
+    <title>Chat · Local Web Share</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#212529" media="(prefers-color-scheme: dark)">
+    <script>document.documentElement.setAttribute('data-bs-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
 
     <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/chatApp.css">
 </head>
 
-<body>
-    <div class="container d-flex flex-column h-100" style="overflow: hidden;">
-        <div class="w-100">
-            <div class="w-100" style="display: none;">
-                <div id="info" class="w-100 d-flex justify-content-center flex-wrap" style="overflow: auto;"></div>
+<body class="app app-fixed">
+    <header class="app-header">
+        <div class="container app-header-inner">
+            <a class="app-brand" href="/">
+                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#share" /></svg>Local Web Share
+            </a>
+            <nav class="app-nav" aria-label="Main">
+                <a href="/files/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#folder" /></svg>Files</a>
+                <a href="/chat/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#chat" /></svg>Chat</a>
+                <a href="/qrCoder/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#qr" /></svg>QR code</a>
+            </nav>
+            <button type="button" class="btn btn-outline-primary btn-sm connect-btn" data-connect>
+                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#phone" /></svg>
+                <span class="connect-label-long">Open on another device</span>
+                <span class="connect-label-short">Connect</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="container chat-main">
+        <section class="app-card chat-card" aria-labelledby="chat-title">
+            <div class="chat-toolbar">
+                <h1 class="chat-title" id="chat-title">Chat</h1>
+                <span class="chat-online" id="onlineCount" hidden>
+                    <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#users" /></svg>
+                    <span id="onlineCountText"></span>
+                </span>
+                <div class="chat-me" id="chatMe" hidden>
+                    You are <strong id="myName"></strong>
+                    <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="changeName">Change</button>
+                </div>
             </div>
-            <div class="btn-group m-3" role="group" aria-label="Navigation Buttons">
-                <a href="/" class="btn btn-outline-primary">Home</a>
-                <button type="button" class="btn btn-outline-primary" onclick="toggleQR()">
-                    Toggle QR
+
+            <div class="chat-banner" id="connectionBanner" role="alert" hidden>
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                Connection lost. Reconnecting…
+            </div>
+
+            <div class="chat-scroll" id="chatScroll">
+                <ul class="chat-messages" id="messages" aria-live="polite" aria-label="Messages"></ul>
+            </div>
+
+            <button type="button" class="btn btn-primary btn-sm chat-new" id="newMessages" hidden>New messages ↓</button>
+
+            <div class="chat-status-row">
+                <span id="typingIndicator" aria-live="polite"></span>
+                <span class="chat-hint">Enter to send · Shift+Enter for a new line</span>
+            </div>
+            <form class="chat-composer" id="composer">
+                <textarea class="form-control" id="messageInput" rows="1" placeholder="Type a message or paste a link…"
+                    aria-label="Message" enterkeyhint="send" disabled></textarea>
+                <button type="submit" class="btn btn-primary btn-icon chat-send" id="sendButton" aria-label="Send" disabled>
+                    <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#send" /></svg>
+                    <span class="chat-send-label">Send</span>
                 </button>
+            </form>
+
+            <div class="chat-join" id="joinPanel">
+                <form class="chat-join-form" id="joinForm">
+                    <span class="chat-join-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="/img/icons.svg#chat" /></svg></span>
+                    <h2 id="joinTitle">Join the chat</h2>
+                    <p class="text-secondary" id="joinIntro">Send text and links to every device that has this page open. Messages
+                        are not saved: only people here right now will see them.</p>
+                    <label for="nicknameInput" class="form-label fw-semibold">Your name</label>
+                    <input class="form-control form-control-lg text-center" id="nicknameInput" maxlength="14"
+                        placeholder="e.g. Laptop or Sam" autocomplete="nickname" enterkeyhint="go" required>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" id="joinSubmit">Join chat</button>
+                    <button type="button" class="btn btn-link w-100 mt-1" id="joinCancel" hidden>Cancel</button>
+                </form>
             </div>
-        </div>
-        <div class="w-100 h-100 card" style="overflow: hidden;">
-            <div id="snackbar" class="card-header"></div>
-            <ul class="card-body pages" style="overflow: hidden;">
-                <li class="w-100 h-100 card chat page" style="overflow: hidden;">
-                    <div class="card-body chatArea" style="overflow-y: auto;">
-                        <ul class="messages p-0"></ul>
-                    </div>
-                    <div class="card-footer p-1">
-                        <input class="w-100 h-100 inputMessage" placeholder="Type here..." />
-                    </div>
-                </li>
-                <li class="login page">
-                    <div class="form">
-                        <h3 class="title">What's your nickname?</h3>
-                        <input class="usernameInput" type="text" maxlength="14" />
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </div>
+        </section>
+    </main>
 
-    <script src="/js/jquery-3.7.1.min.js"></script>
     <script src="/js/socket.io.js"></script>
+    <script src="/js/common.js"></script>
     <script src="/js/chatApp.js"></script>
-    <script src="/js/qr.js"></script>
-
 </body>
 
 </html>

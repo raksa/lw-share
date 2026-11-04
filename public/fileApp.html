@@ -1,69 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
-    <title>Local Web Share (files)</title>
+    <title>Files · Local Web Share</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#336900">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#212529" media="(prefers-color-scheme: dark)">
+    <script>document.documentElement.setAttribute('data-bs-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
 
     <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" type="text/css" href="/css/fileApp.css">
 </head>
 
-<body>
-    <div class="container d-flex flex-column h-100" style="overflow: hidden;">
-        <div class="w-100">
-            <div class="w-100" style="display: none;">
-                <div id="info" class="w-100 d-flex justify-content-center flex-wrap" style="overflow: auto;"></div>
-            </div>
-            <div class="btn-group m-3" role="group" aria-label="Navigation Buttons">
-                <a href="/" class="btn btn-outline-primary">Home</a>
-                <button type="button" class="btn btn-outline-primary" onclick="toggleQR()">
-                    Toggle QR
-                </button>
-            </div>
+<!-- Served for /files/ and for every folder URL (/files/Photos/2024/): fileApp.js reads the folder from the URL. -->
+<body class="app app-fixed">
+    <header class="app-header">
+        <div class="container app-header-inner">
+            <a class="app-brand" href="/">
+                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#share" /></svg>Local Web Share
+            </a>
+            <nav class="app-nav" aria-label="Main">
+                <a href="/files/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#folder" /></svg>Files</a>
+                <a href="/chat/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#chat" /></svg>Chat</a>
+                <a href="/qrCoder/"><svg class="icon" aria-hidden="true"><use href="/img/icons.svg#qr" /></svg>QR code</a>
+            </nav>
+            <button type="button" class="btn btn-outline-primary btn-sm connect-btn" data-connect>
+                <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#phone" /></svg>
+                <span class="connect-label-long">Open on another device</span>
+                <span class="connect-label-short">Connect</span>
+            </button>
         </div>
-        <div class="d-flex flex-grow-1 justify-content-center align-items-center" style="overflow: auto;">
-            <div>
-                <form ref='uploadForm' id='uploadForm' action="" method="POST" enctype="multipart/form-data">
-                    <p>Drag file here or submit below:</p>
-                    <div id="file-to-upload-btn-container">
-                        <div id="file-to-upload-btn" class="btn btn-primary">
-                            <span class="button-text">Choose File:</span>
-                            <input type="file" name="file-to-upload" id="file-to-upload" multiple />
-                        </div>
-                    </div>
-                </form>
-                <br>
-                <div id="successPanel" class="panel panel-success" style="display: none;">
-                    <div class="panel-body text-center">
-                        <p class="text-success" style="margin:0;">File uploaded: "<span id="fileSuccessName"></span>"
-                        </p>
-                    </div>
-                </div>
-                <div id="errorPanel" class="panel panel-danger" style="display: none;">
-                    <div class="panel-body text-center">
-                        <p class="text-danger" style="margin:0;">Fail to upload file</p>
-                    </div>
-                </div>
-                <br>
-                <div class="card">
-                    <div class="card-header">Uploaded Files</div>
-                    <div class="card-body" style="max-height: 300px; overflow: auto;">
-                        <ul id="fileList" class="list-group"></ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div id="success-overlay">
-            <span class="title noselect">Uploading!</span>
-        </div>
-    </div>
+    </header>
 
-    <script src="/js/qr.js"></script>
-    <script src="/js/fileList.js"></script>
+    <main class="container files-main">
+        <noscript>
+            <!-- Without JavaScript: upload to the top folder with a plain form post. -->
+            <form class="app-card noscript-upload" action="/files/" method="POST" enctype="multipart/form-data">
+                <p class="mb-2">JavaScript is off, so only basic uploading to the top folder works.</p>
+                <input type="file" name="file-to-upload" class="form-control mb-2" multiple>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+        </noscript>
+
+        <section class="app-card explorer" id="explorer" aria-label="Shared files">
+            <div class="explorer-toolbar">
+                <button type="button" class="btn btn-primary btn-icon explorer-new" id="newButton" aria-haspopup="menu">
+                    <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#plus" /></svg>New
+                </button>
+                <nav class="breadcrumbs" id="breadcrumbs" aria-label="Folder path"></nav>
+                <div class="explorer-tools">
+                    <div class="files-search">
+                        <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#search" /></svg>
+                        <input type="search" class="form-control form-control-sm" id="filterInput"
+                            placeholder="Filter this folder" aria-label="Filter this folder by name">
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-icon sort-button" id="sortButton"
+                        aria-haspopup="menu"></button>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Layout">
+                        <button type="button" class="btn btn-outline-secondary btn-icon" data-view="list" title="List view"
+                            aria-label="List view">
+                            <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#list" /></svg>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-icon" data-view="grid" title="Grid view"
+                            aria-label="Grid view">
+                            <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#grid" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explorer-subbar">
+                <div class="selection-bar" id="selectionBar" role="toolbar" aria-label="Selected items" hidden>
+                    <button type="button" class="selection-btn" data-action="clear" title="Clear selection" aria-label="Clear selection">
+                        <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#x" /></svg>
+                    </button>
+                    <span class="selection-count" id="selectionCount" aria-live="polite"></span>
+                    <span class="selection-divider" aria-hidden="true"></span>
+                    <button type="button" class="selection-btn" data-action="download" title="Download" aria-label="Download">
+                        <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#download" /></svg>
+                    </button>
+                    <button type="button" class="selection-btn" data-action="move" title="Move to…" aria-label="Move to…">
+                        <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#folder-move" /></svg>
+                    </button>
+                    <button type="button" class="selection-btn" data-action="rename" title="Rename (F2)" aria-label="Rename">
+                        <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#edit" /></svg>
+                    </button>
+                    <button type="button" class="selection-btn" data-action="copy-link" title="Copy link" aria-label="Copy link">
+                        <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#link" /></svg>
+                    </button>
+                    <button type="button" class="selection-btn is-danger" data-action="delete" title="Delete (Del)" aria-label="Delete">
+                        <svg class="icon" aria-hidden="true"><use href="/img/icons.svg#trash" /></svg>
+                    </button>
+                </div>
+                <span class="folder-summary" id="folderSummary" aria-live="polite"></span>
+            </div>
+
+            <div class="explorer-body" id="explorerBody" tabindex="-1">
+                <div class="list-header" id="listHeader" role="row" hidden>
+                    <span role="columnheader"><button type="button" data-sort="name">Name</button></span>
+                    <span role="columnheader" class="item-modified"><button type="button" data-sort="mtime">Last modified</button></span>
+                    <span role="columnheader" class="item-size"><button type="button" data-sort="size">File size</button></span>
+                    <span role="columnheader" aria-label="Actions"></span>
+                </div>
+                <div class="items" id="items" role="listbox" aria-multiselectable="true" aria-label="Items in this folder"></div>
+                <div class="explorer-empty" id="emptyState" hidden></div>
+                <div class="marquee" id="marquee" hidden></div>
+            </div>
+
+            <div class="drop-hint" id="dropHint" role="status" hidden></div>
+        </section>
+    </main>
+
+    <input type="file" id="fileInput" multiple hidden>
+    <input type="file" id="folderInput" webkitdirectory multiple hidden>
+
+    <script src="/js/common.js"></script>
     <script src="/js/fileApp.js"></script>
 </body>
 
