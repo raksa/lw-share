@@ -778,6 +778,69 @@
     text-align: center;
 }
 
+/* Text editor */
+
+.editor-dialog {
+    width: min(60rem, calc(100vw - 2rem));
+    height: min(48rem, calc(100dvh - 2rem));
+    max-width: none;
+    max-height: none;
+}
+
+.editor-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Could not open the file: just the message and a Close button. */
+.editor-dialog.is-failed {
+    width: min(26rem, calc(100vw - 2rem));
+    height: fit-content;
+    margin: auto;
+    padding: 1.25rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--app-radius);
+}
+
+.editor-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    margin-bottom: 0.75rem;
+}
+
+.editor-header .explorer-dialog-title {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.editor-text {
+    flex: 1;
+    min-height: 8rem;
+    resize: none;
+    font-family: var(--bs-font-monospace);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    tab-size: 4;
+}
+
+.editor-error {
+    margin-top: 0.5rem;
+    color: var(--bs-danger-text-emphasis);
+    overflow-wrap: anywhere;
+}
+
+.editor-status {
+    margin-right: auto;
+    align-self: center;
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
 /* Upload panel */
 
 .upload-panel {
@@ -943,6 +1006,15 @@
         right: 0.5rem;
         bottom: 0.5rem;
         width: calc(100vw - 1rem);
+    }
+
+    .editor-dialog {
+        width: 100vw;
+        height: 100dvh;
+        margin: 0;
+        padding: 0.75rem;
+        border: 0;
+        border-radius: 0;
     }
 }
 

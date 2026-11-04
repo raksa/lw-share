@@ -5,10 +5,10 @@
 // Names starting with "." are hidden: they are never listed or addressable,
 // which also rules out ".." and keeps in-progress uploads out of sight.
 
-import { createWriteStream, lstatSync, mkdirSync, renameSync, statSync } from 'node:fs';
-import { mkdir, readdir, rm, stat, unlink } from 'node:fs/promises';
+import { createWriteStream, lstatSync, mkdirSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { mkdir, readdir, readFile, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { extname, isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 
 /** An error with an HTTP status and a message that is safe to show users. */
@@ -25,6 +25,9 @@ const ILLEGAL_CHARS_GLOBAL = new RegExp(ILLEGAL_CHARS.source, 'g');
 const WINDOWS_DEVICE_NAME = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
 const MAX_NAME_BYTES = 255;
 const MAX_BATCH = 10_000;
+/** Largest file the text editor opens or saves. */
+export const MAX_TEXT_BYTES = 5 * 1024 * 1024;
+const TOO_LARGE_TO_EDIT = `Files over ${MAX_TEXT_BYTES / 1024 / 1024} MB cannot be edited here`;
 const IS_WINDOWS = process.platform === 'win32';
 
 /** Map a Node fs error (or anything thrown) to a FileStoreError. */
@@ -205,7 +208,16 @@ export function createFileStore(rootPath) {
             name,
             parentRelPath: item.segments.slice(0, -1).join('/'),
             isFolder: stats.isDirectory(),
+            stats,
         };
+    }
+
+    function locateFile(relPath) {
+        const item = locateItem(relPath);
+        if (item.isFolder) {
+            throw new FileStoreError(400, 'Only files can be edited');
+        }
+        return item;
     }
 
     /** List the visible files and folders directly inside a folder. */
@@ -251,6 +263,78 @@ export function createFileStore(rootPath) {
             throw error;
         }
         return joinRel(parent.relPath, folderName);
+    }
+
+    /** Create an empty file. Unlike uploads, a clashing name is an error. */
+    function createFile(parentRelPath, name) {
+        const fileName = validateName(name);
+        const parent = locateFolder(parentRelPath);
+        try {
+            writeFileSync(join(parent.absPath, fileName), '', { flag: 'wx' });
+        } catch (error) {
+            if (error.code === 'EEXIST') {
+                throw new FileStoreError(409, `"${fileName}" already exists here`);
+            }
+            throw error;
+        }
+        return joinRel(parent.relPath, fileName);
+    }
+
+    /**
+     * A file's contents as text, for the editor. Only UTF-8 text up to
+     * MAX_TEXT_BYTES is returned; a byte order mark is kept in `content` so
+     * saving writes it back.
+     */
+    async function readText(fileRelPath) {
+        const file = locateFile(fileRelPath);
+        if (file.stats.size > MAX_TEXT_BYTES) {
+            throw new FileStoreError(413, TOO_LARGE_TO_EDIT);
+        }
+        const data = await readFile(file.absPath);
+        let content = null;
+        if (!data.includes(0)) {
+            try {
+                content = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(data);
+            } catch {
+                // Not UTF-8: reported below.
+            }
+        }
+        if (content === null) {
+            throw new FileStoreError(415, 'This is not a text file, so it cannot be edited here');
+        }
+        return { path: file.relPath, content, size: data.length, mtime: Math.round(file.stats.mtimeMs) };
+    }
+
+    /**
+     * Replace a file's contents. With `expectedMtime` (from readText), a file
+     * that changed in the meantime is not overwritten (412). The data goes to
+     * a temp file first, so a failed save leaves the old contents intact.
+     */
+    async function writeText(fileRelPath, data, expectedMtime) {
+        const file = locateFile(fileRelPath);
+        const bytes = typeof data === 'string' ? Buffer.from(data) : data;
+        if (!Buffer.isBuffer(bytes)) {
+            throw new FileStoreError(400, 'Expected the file contents');
+        }
+        if (bytes.length > MAX_TEXT_BYTES) {
+            throw new FileStoreError(413, TOO_LARGE_TO_EDIT);
+        }
+        if (expectedMtime !== undefined && !Number.isFinite(expectedMtime)) {
+            throw new FileStoreError(400, 'Invalid mtime');
+        }
+        if (expectedMtime !== undefined && expectedMtime !== Math.round(file.stats.mtimeMs)) {
+            throw new FileStoreError(412, `"${file.name}" was changed by someone else since you opened it`);
+        }
+        const tempPath = join(dirname(file.absPath), `.lw-share-save-${randomUUID()}`);
+        try {
+            await writeFile(tempPath, bytes, { flag: 'wx', mode: file.stats.mode & 0o777 });
+            renameSync(tempPath, file.absPath);
+        } catch (error) {
+            await unlink(tempPath).catch(() => { });
+            throw error;
+        }
+        const stats = statSync(file.absPath);
+        return { path: file.relPath, size: stats.size, mtime: Math.round(stats.mtimeMs) };
     }
 
     function rename(itemRelPath, newName) {
@@ -343,5 +427,5 @@ export function createFileStore(rootPath) {
         }
     }
 
-    return { root, list, createFolder, rename, move, remove, saveUpload };
+    return { root, list, createFolder, createFile, readText, writeText, rename, move, remove, saveUpload };
 }

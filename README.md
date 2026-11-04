@@ -140,9 +140,10 @@ Every page has the same header with an **Open on another device** button that sh
 ### 📂 File Sharing (`/files/`)
 A Google-Drive-style explorer for the shared folder.
 - **Folders**: Breadcrumbs, and every folder has its own URL (`/files/Photos/2024/`), so Back/Forward and shared links work
-- **Upload**: New → New folder / File upload / Folder upload, or drag files and whole folders from the desktop onto the page, a folder or a breadcrumb. Pasting a screenshot uploads it
+- **Upload**: New → New folder / New file / File upload / Folder upload, or drag files and whole folders from the desktop onto the page, a folder or a breadcrumb. Pasting a screenshot uploads it
 - **Upload panel**: Per-file progress, cancel and retry, three uploads at a time, and a warning before leaving the page mid-upload. No size limit
 - **No overwrites**: A name that already exists keeps both files (`photo (1).jpg`)
+- **Edit text files**: New → New file asks for a full name (`notes.md`) and opens it in a plain text editor; Edit in the item menu opens existing text files up to 5 MB. Ctrl/Cmd+S saves and keeps editing. Line endings are kept, and saving over someone else's newer version asks first
 - **Organize**: Rename (F2), Move to… (folder picker), Delete (Del, with confirmation; permanent, no trash), Download, Copy link. Drag items onto a folder or breadcrumb to move them
 - **Select**: Click, Ctrl/Cmd+click, Shift+click, box-drag or Ctrl+A; right-click or ⋮ for the item menu. On touch screens, tap to open and long-press to select
 - **Views**: List or grid (with image thumbnails), sort by name, date modified or size, and filter the folder
@@ -286,6 +287,9 @@ lw-share/
 | --- | --- |
 | `GET /api/files/list?path=<folder>` | List a folder |
 | `POST /api/files/folder` `{path, name}` | Create a folder |
+| `POST /api/files/file` `{path, name}` | Create an empty file |
+| `GET /api/files/text?path=<file>` | A UTF-8 text file (up to 5 MB) as `{path, content, size, mtime}` |
+| `PUT /api/files/text?path=<file>&mtime=<mtime>` | Replace a file's contents with the raw body; with `mtime`, answers 412 instead if the file changed since it was read |
 | `POST /api/files/rename` `{path, name}` | Rename a file or folder |
 | `POST /api/files/move` `{paths, destination}` | Move items into a folder |
 | `POST /api/files/delete` `{paths}` | Delete items (permanent) |

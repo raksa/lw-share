@@ -3,8 +3,9 @@
 // Google-Drive-style explorer for the shared folder: folder URLs and
 // breadcrumbs, list and grid views, multi-select (click, Ctrl/Shift, drag a
 // box, long-press on touch), context menus, drag and drop (upload from the
-// desktop, drag items onto folders to move them), new folder, rename, move,
-// delete and an upload queue. Uses the JSON API in src/fileApp.mjs.
+// desktop, drag items onto folders to move them), new folder, new file, a
+// plain text editor, rename, move, delete and an upload queue. Uses the JSON
+// API in src/fileApp.mjs.
 (() => {
     const { el, icon, toast, copyWithToast } = LWShare;
 
@@ -16,6 +17,16 @@
     const DRAG_TYPE = 'application/x-lw-share-items';
     const THUMBNAIL_PATTERN = /\.(png|jpe?g|gif|webp|svg|bmp|avif|ico)$/i;
     const SORT_LABELS = { name: 'Name', mtime: 'Last modified', size: 'File size' };
+    const MAX_EDIT_BYTES = 5 * 1024 * 1024; // MAX_TEXT_BYTES in src/fileStore.mjs
+    // Files the editor is not offered for. Anything else may be text; the
+    // server refuses what turns out to be binary.
+    const NOT_TEXT_EXTENSIONS = new Set([
+        'png jpg jpeg gif webp bmp heic heif avif ico tif tiff psd',
+        'mp4 mov avi mkv webm m4v wmv 3gp mp3 wav flac aac ogg m4a opus wma',
+        'pdf doc docx xls xlsx ppt pptx odt ods odp pages numbers key',
+        'zip rar 7z tar gz bz2 xz tgz iso dmg apk jar exe dll so dylib bin class',
+        'woff woff2 ttf otf eot sqlite db',
+    ].join(' ').split(' '));
 
     const KINDS = [
         { id: 'image', icon: 'image', pattern: /\.(png|jpe?g|gif|webp|svg|bmp|heic|heif|avif|ico|tiff?)$/i },
@@ -63,6 +74,8 @@
     const kindOf = (entry) => (entry.type === 'folder'
         ? FOLDER_KIND
         : KINDS.find((kind) => kind.pattern.test(entry.name)) || OTHER_KIND);
+    const isEditable = (entry) => entry.type === 'file' && entry.size <= MAX_EDIT_BYTES
+        && !(entry.name.includes('.') && NOT_TEXT_EXTENSIONS.has(entry.name.split('.').pop().toLowerCase()));
 
     function pathFromLocation() {
         const rest = location.pathname.replace(/^\/files\/?/, '');
@@ -101,12 +114,16 @@
     }
 
     // "Untitled folder", else "Untitled folder (1)", ... (case-insensitive, like
-    // the server's renaming on Windows and macOS).
-    function uniqueName(name, takenNames) {
+    // the server's renaming on Windows and macOS). Files keep their extension
+    // last: "Untitled (1).txt".
+    function uniqueName(name, takenNames, { isFile = false } = {}) {
         const taken = new Set(Array.from(takenNames, (taken) => taken.toLowerCase()));
+        const dot = isFile ? name.lastIndexOf('.') : -1;
+        const stem = dot > 0 ? name.slice(0, dot) : name;
+        const extension = dot > 0 ? name.slice(dot) : '';
         let candidate = name;
         for (let n = 1; taken.has(candidate.toLowerCase()); n++) {
-            candidate = `${name} (${n})`;
+            candidate = `${stem} (${n})${extension}`;
         }
         return candidate;
     }
@@ -128,14 +145,18 @@
         },
     };
 
+    // payload: an object is sent as JSON, a string as plain text.
     async function api(method, endpoint, payload) {
+        const isText = typeof payload === 'string';
         let response;
         try {
             response = await fetch(`${API}/${endpoint}`, {
                 method,
                 cache: 'no-store',
-                headers: payload ? { 'Content-Type': 'application/json' } : undefined,
-                body: payload ? JSON.stringify(payload) : undefined,
+                headers: payload === undefined
+                    ? undefined
+                    : { 'Content-Type': isText ? 'text/plain;charset=UTF-8' : 'application/json' },
+                body: payload === undefined || isText ? payload : JSON.stringify(payload),
             });
         } catch {
             throw Object.assign(new Error('Cannot reach lw-share. Is the server still running?'), { offline: true });
@@ -375,6 +396,7 @@
             const single = entries.length === 1;
             selectionCount.textContent = `${entries.length} selected`;
             selectionBar.querySelector('[data-action="download"]').hidden = !entries.every((e) => e.type === 'file');
+            selectionBar.querySelector('[data-action="edit"]').hidden = !single || !isEditable(entries[0]);
             selectionBar.querySelector('[data-action="rename"]').hidden = !single;
             selectionBar.querySelector('[data-action="copy-link"]').hidden = !single;
             return;
@@ -753,6 +775,7 @@
         const ready = state.status === 'ready';
         return [
             { label: 'New folder', icon: 'folder-plus', disabled: !ready, action: () => createFolder() },
+            { label: 'New file', icon: 'file-plus', disabled: !ready, action: () => createFile() },
             '-',
             { label: 'File upload', icon: 'upload', disabled: !ready, action: () => pickFiles(fileInput) },
             canPickFolders && {
@@ -770,6 +793,11 @@
                 icon: single.type === 'folder' ? 'folder' : 'external-link',
                 hint: 'Enter',
                 action: () => openEntry(single),
+            },
+            single && isEditable(single) && {
+                label: 'Edit',
+                icon: 'file-edit',
+                action: () => editFile(joinPath(state.path, single.name)),
             },
             allFiles && {
                 label: single ? 'Download' : `Download ${entries.length} files`,
@@ -812,16 +840,24 @@
 
     // ---- Dialogs ------------------------------------------------------------
 
-    function showDialog(dialog, onClose) {
-        // Close when the backdrop (outside the dialog box) is clicked.
-        dialog.addEventListener('click', (event) => {
+    function showDialog(dialog, onClose, { closeOnBackdrop = true } = {}) {
+        // Close when the backdrop (outside the dialog box) is clicked. The press
+        // must start there too: a text selection dragged out of the box ends
+        // with a click on the dialog element.
+        const onBackdrop = (event) => {
             if (event.target !== dialog) {
-                return;
+                return false;
             }
             const rect = dialog.getBoundingClientRect();
-            const inside = event.clientX >= rect.left && event.clientX <= rect.right
-                && event.clientY >= rect.top && event.clientY <= rect.bottom;
-            if (!inside) {
+            return event.clientX < rect.left || event.clientX > rect.right
+                || event.clientY < rect.top || event.clientY > rect.bottom;
+        };
+        let pressedBackdrop = false;
+        dialog.addEventListener('pointerdown', (event) => {
+            pressedBackdrop = onBackdrop(event);
+        });
+        dialog.addEventListener('click', (event) => {
+            if (closeOnBackdrop && pressedBackdrop && onBackdrop(event)) {
                 dialog.close();
             }
         });
@@ -835,13 +871,15 @@
 
     // Asks for a name. onSubmit(name) does the work; if it throws, the error is
     // shown in the dialog so the name can be fixed. Resolves to the name or null.
-    function promptDialog({ title, label, value, okLabel, selectStem = false, onSubmit }) {
+    function promptDialog({ title, label, value, okLabel, hint = '', selectStem = false, onSubmit }) {
         return new Promise((resolve) => {
             let result = null;
+            const hintId = `hint-${Date.now()}`;
             const input = el('input', {
                 type: 'text',
                 className: 'form-control',
                 'aria-label': label,
+                'aria-describedby': hint ? hintId : null,
                 autocomplete: 'off',
                 spellcheck: 'false',
             });
@@ -852,6 +890,7 @@
                 el('h2', { className: 'explorer-dialog-title', text: title }),
                 input,
                 error,
+                hint ? el('div', { className: 'form-text', id: hintId, text: hint }) : null,
                 el('div', { className: 'explorer-dialog-actions' },
                     el('button', { type: 'button', className: 'btn btn-outline-secondary', text: 'Cancel', onclick: () => dialog.close() }),
                     okButton,
@@ -1000,6 +1039,192 @@
         });
     }
 
+    // ---- Text editor --------------------------------------------------------
+
+    let activeEditor = null; // { isDirty } while the editor is open
+
+    // Edits a UTF-8 text file in a plain textarea. Save saves and closes;
+    // Ctrl/Cmd+S saves and keeps editing. CRLF line endings and a byte order
+    // mark are kept. If someone else saved the file after it was opened, asks
+    // before overwriting their version.
+    function editFile(path) {
+        const name = baseName(path);
+        let mtime = null; // set once loaded
+        let crlf = false;
+        let savedValue = '';
+        let busy = false; // saving, or asking a question
+
+        const status = el('span', { className: 'editor-status', 'aria-live': 'polite', text: 'Loading…' });
+        const textarea = el('textarea', {
+            className: 'form-control editor-text',
+            'aria-label': `Contents of ${name}`,
+            autocomplete: 'off',
+            autocapitalize: 'off',
+            spellcheck: 'false',
+            disabled: true,
+        });
+        const error = el('div', { className: 'editor-error', role: 'alert', hidden: true });
+        const cancelButton = el('button', {
+            type: 'button',
+            className: 'btn btn-outline-secondary',
+            text: 'Cancel',
+            onclick: () => requestClose(),
+        });
+        const saveButton = el('button', {
+            type: 'button',
+            className: 'btn btn-primary',
+            text: 'Save',
+            title: 'Save and close. Ctrl+S saves and keeps editing.',
+            disabled: true,
+            onclick: () => save({ close: true }),
+        });
+        const dialog = el('dialog', { className: 'explorer-dialog editor-dialog', 'aria-label': `Edit ${name}` },
+            el('div', { className: 'editor-header' },
+                itemIcon({ type: 'file', name }),
+                el('h2', { className: 'explorer-dialog-title', title: path, text: name }),
+            ),
+            textarea,
+            error,
+            el('div', { className: 'explorer-dialog-actions' }, status, cancelButton, saveButton),
+        );
+
+        const isDirty = () => mtime !== null && textarea.value !== savedValue;
+        const showStatus = () => {
+            status.textContent = isDirty() ? 'Unsaved changes' : '';
+        };
+        const showError = (message) => {
+            error.textContent = message;
+            error.hidden = !message;
+        };
+
+        async function load() {
+            try {
+                const file = await api('GET', `text?${new URLSearchParams({ path })}`);
+                crlf = file.content.includes('\r\n');
+                textarea.value = file.content;
+                savedValue = textarea.value; // the textarea has turned CRLF into LF
+                mtime = file.mtime;
+                textarea.disabled = false;
+                saveButton.disabled = false;
+                showStatus();
+                textarea.focus();
+                textarea.setSelectionRange(0, 0);
+            } catch (loadError) {
+                status.textContent = '';
+                dialog.classList.add('is-failed');
+                textarea.hidden = true;
+                saveButton.hidden = true;
+                cancelButton.textContent = 'Close';
+                showError(`Could not open “${name}”: ${loadError.message}`);
+                cancelButton.focus();
+            }
+        }
+
+        async function save({ close = false } = {}) {
+            if (busy || mtime === null) {
+                return;
+            }
+            if (!isDirty()) {
+                if (close) {
+                    dialog.close();
+                }
+                return;
+            }
+            const value = textarea.value;
+            const text = crlf ? value.replace(/\n/g, '\r\n') : value;
+            if (new Blob([text]).size > MAX_EDIT_BYTES) {
+                showError(`Files over ${MAX_EDIT_BYTES / 1024 / 1024} MB cannot be saved here.`);
+                return;
+            }
+            // Without the mtime the server saves even if the file has changed.
+            const put = (checkMtime) => api('PUT', `text?${new URLSearchParams(checkMtime ? { path, mtime } : { path })}`, text);
+            busy = true;
+            saveButton.disabled = true;
+            status.textContent = 'Saving…';
+            showError('');
+            try {
+                let result;
+                try {
+                    result = await put(true);
+                } catch (saveError) {
+                    if (saveError.status !== 412) {
+                        throw saveError;
+                    }
+                    const overwrite = await confirmDialog({
+                        title: 'Overwrite their changes?',
+                        message: `Someone else saved “${name}” after you opened it. Saving replaces their version with yours.`,
+                        okLabel: 'Overwrite',
+                        danger: true,
+                    });
+                    if (!overwrite) {
+                        showStatus();
+                        return;
+                    }
+                    result = await put(false);
+                }
+                mtime = result.mtime;
+                savedValue = value;
+                refreshSoon();
+                if (close) {
+                    dialog.close();
+                    toast(`Saved “${name}”`, 'success');
+                } else {
+                    status.textContent = isDirty() ? 'Unsaved changes' : 'Saved';
+                }
+            } catch (saveError) {
+                showError(`Could not save: ${saveError.message}`);
+                showStatus();
+            } finally {
+                busy = false;
+                saveButton.disabled = false;
+            }
+        }
+
+        async function requestClose() {
+            if (busy) {
+                return;
+            }
+            if (isDirty()) {
+                busy = true;
+                const discard = await confirmDialog({
+                    title: 'Discard changes?',
+                    message: `Your changes to “${name}” have not been saved.`,
+                    okLabel: 'Discard',
+                    danger: true,
+                });
+                busy = false;
+                if (!discard) {
+                    textarea.focus();
+                    return;
+                }
+            }
+            dialog.close();
+        }
+
+        textarea.addEventListener('input', showStatus);
+        dialog.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                requestClose();
+            } else if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
+                event.preventDefault();
+                save();
+            }
+        });
+        // Other ways the browser asks to close a dialog, such as Android's Back.
+        dialog.addEventListener('cancel', (event) => {
+            event.preventDefault();
+            requestClose();
+        });
+
+        activeEditor = { isDirty };
+        // No closing on a backdrop click: it is too easy to lose the text that way.
+        showDialog(dialog, () => {
+            activeEditor = null;
+        }, { closeOnBackdrop: false });
+        load();
+    }
+
     // ---- Actions ------------------------------------------------------------
 
     async function createFolder() {
@@ -1025,6 +1250,33 @@
             selectOnly(createdName);
             focusItem(createdName);
         }
+    }
+
+    // Asks for a full name, extension included, creates the empty file and
+    // opens it in the editor.
+    async function createFile() {
+        const parent = state.path;
+        let createdPath = null;
+        const name = await promptDialog({
+            title: 'New file',
+            label: 'File name',
+            value: uniqueName('Untitled.txt', state.entries.map((entry) => entry.name), { isFile: true }),
+            hint: 'Include the extension, such as .txt, .md or .html.',
+            okLabel: 'Create',
+            onSubmit: async (value) => {
+                createdPath = (await api('POST', 'file', { path: parent, name: value })).path;
+            },
+        });
+        if (!name) {
+            return;
+        }
+        if (state.path === parent) {
+            const createdName = baseName(createdPath);
+            highlight.add(createdName);
+            await refresh();
+            selectOnly(createdName);
+        }
+        editFile(createdPath);
     }
 
     async function renameEntry(entry) {
@@ -1151,6 +1403,7 @@
         }
         switch (action) {
             case 'download': downloadEntries(entries); break;
+            case 'edit': editFile(joinPath(state.path, entries[0].name)); break;
             case 'move': moveEntries(entries); break;
             case 'rename': renameEntry(entries[0]); break;
             case 'copy-link': copyLink(entries[0]); break;
@@ -1452,7 +1705,7 @@
     }
 
     window.addEventListener('beforeunload', (event) => {
-        if (uploads.tasks.some((t) => t.status === 'queued' || t.status === 'uploading')) {
+        if (uploads.tasks.some((t) => t.status === 'queued' || t.status === 'uploading') || activeEditor?.isDirty()) {
             event.preventDefault();
             event.returnValue = '';
         }

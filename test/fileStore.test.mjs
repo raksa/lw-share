@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 
-import { createFileStore, sanitizeName, validateName } from '../src/fileStore.mjs';
+import { createFileStore, MAX_TEXT_BYTES, sanitizeName, validateName } from '../src/fileStore.mjs';
 
 const sandbox = mkdtempSync(join(tmpdir(), 'lw-share-test-'));
 const root = join(sandbox, 'share');
@@ -36,6 +36,9 @@ describe('paths stay inside the root', () => {
             assert.throws(() => store.rename(path, 'x'), { status: 400 });
             assert.throws(() => store.move(['a.txt'], path), { status: 400 });
             assert.throws(() => store.createFolder(path, 'x'), { status: 400 });
+            assert.throws(() => store.createFile(path, 'x.txt'), { status: 400 });
+            await assert.rejects(store.readText(path), { status: 400 });
+            await assert.rejects(store.writeText(path, 'x'), { status: 400 });
             await assert.rejects(store.saveUpload(path, 'x.txt', Readable.from(['x'])), { status: 400 });
             assert.equal(store.move([path], 'docs').failed.length, 1);
             assert.equal((await store.remove([path])).failed.length, 1);
@@ -100,6 +103,62 @@ describe('createFolder and rename', () => {
         assert.equal(store.rename('docs', 'Docs'), 'Docs');
         assert.deepEqual(names(), ['.hidden', 'Docs', 'c.txt']);
         assert.throws(() => store.rename('missing.txt', 'x.txt'), { status: 404 });
+    });
+});
+
+describe('createFile, readText and writeText', () => {
+    test('creates an empty file and refuses a duplicate or bad name', () => {
+        assert.equal(store.createFile('docs', 'notes.md'), 'docs/notes.md');
+        assert.equal(readFileSync(join(root, 'docs', 'notes.md'), 'utf8'), '');
+        assert.throws(() => store.createFile('docs', 'notes.md'), { status: 409 });
+        assert.throws(() => store.createFile('', 'docs'), { status: 409 });
+        assert.throws(() => store.createFile('', '.env'), { status: 400 });
+        assert.throws(() => store.createFile('missing', 'x.txt'), { status: 404 });
+    });
+
+    test('reads text, keeping a byte order mark and CRLF line endings', async () => {
+        writeFileSync(join(root, 'bom.txt'), '\uFEFFone\r\ntwo');
+        const text = await store.readText('bom.txt');
+        assert.equal(text.path, 'bom.txt');
+        assert.equal(text.content, '\uFEFFone\r\ntwo');
+        assert.equal(text.size, 11);
+        assert.equal(typeof text.mtime, 'number');
+    });
+
+    test('refuses folders, binary, non-UTF-8 and large files', async () => {
+        writeFileSync(join(root, 'bin.dat'), Buffer.from([0x50, 0x00, 0x51]));
+        writeFileSync(join(root, 'latin1.txt'), Buffer.from([0x63, 0x61, 0x66, 0xe9]));
+        writeFileSync(join(root, 'big.txt'), Buffer.alloc(MAX_TEXT_BYTES + 1, 0x61));
+        await assert.rejects(store.readText('docs'), { status: 400 });
+        await assert.rejects(store.readText('bin.dat'), { status: 415 });
+        await assert.rejects(store.readText('latin1.txt'), { status: 415 });
+        await assert.rejects(store.readText('big.txt'), { status: 413 });
+        await assert.rejects(store.readText('missing.txt'), { status: 404 });
+    });
+
+    test('writes text and returns the new size and mtime', async () => {
+        const { mtime } = await store.readText('a.txt');
+        const saved = await store.writeText('a.txt', 'héllo', mtime);
+        assert.deepEqual([saved.path, saved.size], ['a.txt', 6]);
+        assert.equal(readFileSync(join(root, 'a.txt'), 'utf8'), 'héllo');
+        assert.equal((await store.readText('a.txt')).mtime, saved.mtime);
+        await store.writeText('docs/b.txt', Buffer.from(''));
+        assert.equal(readFileSync(join(root, 'docs', 'b.txt'), 'utf8'), '');
+        assert.deepEqual(names(), ['.hidden', 'a.txt', 'docs']);
+    });
+
+    test('does not overwrite a file that changed since it was read', async () => {
+        const { mtime } = await store.readText('a.txt');
+        await assert.rejects(store.writeText('a.txt', 'stale', mtime - 5000), { status: 412 });
+        await assert.rejects(store.writeText('a.txt', 'stale', Number.NaN), { status: 400 });
+        assert.equal(readFileSync(join(root, 'a.txt'), 'utf8'), 'a');
+    });
+
+    test('refuses to write folders, missing files and too much data', async () => {
+        await assert.rejects(store.writeText('docs', 'x'), { status: 400 });
+        await assert.rejects(store.writeText('missing.txt', 'x'), { status: 404 });
+        await assert.rejects(store.writeText('a.txt', Buffer.alloc(MAX_TEXT_BYTES + 1)), { status: 413 });
+        assert.deepEqual(names(), ['.hidden', 'a.txt', 'docs']);
     });
 });
 

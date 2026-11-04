@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import express from 'express';
 
 import { myConsole } from './consoleHelpers.mjs';
-import { createFileStore, toStoreError } from './fileStore.mjs';
+import { createFileStore, toStoreError, MAX_TEXT_BYTES } from './fileStore.mjs';
 
 import { setCorsHeaders, checkIsValidFile, listFiles } from './helpers.mjs';
 
@@ -52,6 +52,24 @@ function createApiRouter(store) {
     router.post('/folder', jsonBody, handle(({ path, name }) => {
         return { path: store.createFolder(path, name) };
     }));
+    // { path, name } -> { path } of the new, empty file
+    router.post('/file', jsonBody, handle(({ path, name }) => {
+        return { path: store.createFile(path, name) };
+    }));
+    // ?path=a/b.txt -> { path, content, size, mtime } (UTF-8 text files only)
+    router.get('/text', handle((_body, req) => store.readText(req.query.path)));
+    // ?path=a/b.txt[&mtime=<from GET text>], the new text as the body -> { path, size, mtime }.
+    // With mtime, a file that changed since it was read is not overwritten (412).
+    router.put('/text', express.raw({ type: () => true, limit: MAX_TEXT_BYTES }), async (req, res) => {
+        try {
+            const { path, mtime } = req.query;
+            const data = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+            res.json(await store.writeText(path, data, mtime === undefined ? undefined : Number(mtime)));
+            myConsole.log(`File edited: ${path}`);
+        } catch (error) {
+            sendStoreError(res, error);
+        }
+    });
     // { path, name } -> { path } after renaming
     router.post('/rename', jsonBody, handle(({ path, name }) => {
         return { path: store.rename(path, name) };
@@ -82,7 +100,11 @@ function createApiRouter(store) {
     // HTML error handler.
     router.use((error, _req, res, _next) => {
         const status = error.status >= 400 && error.status < 500 ? error.status : 500;
-        res.status(status).json({ error: status === 500 ? 'Unexpected server error' : error.message });
+        let message = status === 500 ? 'Unexpected server error' : error.message;
+        if (error.type === 'entity.too.large') {
+            message = 'Too much data was sent';
+        }
+        res.status(status).json({ error: message });
     });
     return router;
 }
