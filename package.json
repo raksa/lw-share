@@ -1,6 +1,6 @@
 {
     "name": "lw-share",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "author": "Raksa Eng <eng.raksa@gmail.com>",
     "description": "Local Web Share: A simple static http file sharing and chat server",
     "keywords": [
