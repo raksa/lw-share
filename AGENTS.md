@@ -63,3 +63,12 @@ the window and the console is clean.
 Electron's "Insecure Content-Security-Policy" warning is switched off by
 [scripts/electron-preload.cjs](scripts/electron-preload.cjs). It describes the Electron shell,
 not lw-share, and it would otherwise appear on every page load.
+
+## Robot testing (`lw-robot-test`)
+
+[.claude/skills/lw-robot-test/SKILL.md](.claude/skills/lw-robot-test/SKILL.md) runs a full
+click-through of the app in this window and reports pass/fail with evidence. In Claude Code, run
+`/lw-robot-test` (smoke), `/lw-robot-test full` or `/lw-robot-test changed`. Other agents can
+follow SKILL.md directly. It works only inside a `robot-<runId>/` folder that it creates in the
+share and deletes afterwards. Screenshots and upload samples go to `test-results/` (gitignored).
+`node .claude/skills/lw-robot-test/robot.mjs api` runs just the HTTP checks, with no browser.
