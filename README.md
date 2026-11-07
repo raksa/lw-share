@@ -306,6 +306,22 @@ lw-share/
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+### Releasing to npm
+
+For maintainers, from a clean `main`:
+
+```bash
+npm test
+npm pack --dry-run                          # check which files go in the package
+npm whoami                                  # run `npm login` if this fails
+npm version patch --tag-version-prefix=""   # or minor / major
+npm publish
+git push origin main --follow-tags
+npm view lw-share version                   # confirm the new version is live
+```
+
+`npm version` updates `package.json` and `package-lock.json`, commits them and creates the git tag. `--tag-version-prefix=""` keeps tags in this repo's style (`0.0.7`, not `v0.0.7`). Don't bump `package.json` by hand as well, or you will skip a version. See [RELEASE_GUIDE.md](RELEASE_GUIDE.md) for the full checklist, including a test install of the packed tarball.
+
 ## 📝 Changelog
 
 ### v0.0.1 (Current)
